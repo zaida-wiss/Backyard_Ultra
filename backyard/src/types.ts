@@ -5,3 +5,6 @@ export type Runner = {
   lapTimes:number[];
 };
 
+export type RunnersProps = {
+  runners: Runner[];
+};
