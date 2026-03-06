@@ -1,5 +1,5 @@
-import "../../data/RunnersData";
-import { Runners } from "../../data/RunnersData";
+import { runners } from "../../data/runnersData";
+import Runners from "../Runners/Runners";
 
 export default function Dashboard () {
   return (
