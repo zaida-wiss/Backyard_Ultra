@@ -1,73 +1,8 @@
-.runners-table__wrapper {
-  overflow-x: auto;
-  border: 2px solid #23d5e0;
-  background: #050505;
+.tabell {
+border-collapse: collapse;
+border: 1px solid black;
 }
-
-.runners-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 960px;
-  background: #050505;
-  color: #f8fafc;
-}
-
-.runners-table th,
-.runners-table td {
-  padding: 0.55rem 0.6rem;
-  border: 1px solid #d7d7d7;
-  text-align: left;
-  white-space: nowrap;
-}
-
-.runners-table thead th {
-  background: #20d5e0;
-  color: #000000;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-
-.runners-table__start-row th {
-  background: #050505;
-  color: #f472ff;
-  font-weight: 500;
-  border-color: #20d5e0;
-  text-align: center;
-}
-
-.runners-table__start-row span {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  transform: rotate(180deg);
-  display: inline-block;
-  min-height: 98px;
-  letter-spacing: 0.02em;
-}
-
-.runners-table__start-empty {
-  border-right-color: #20d5e0;
-}
-
-.runners-table tbody td {
-  text-align: center;
-  font-size: 0.98rem;
-}
-
-.runners-table tbody td:nth-child(2) {
-  text-align: left;
-}
-
-.runners-table thead th:nth-child(n + 5),
-.runners-table tbody td:nth-child(n + 5) {
-  min-width: 96px;
-}
-
-.runner--inactive td:nth-child(2) {
-  text-decoration: line-through;
-  opacity: 0.6;
-}
-
-.runners-table tbody tr:hover td {
-  background: #0a0a0a;
+.tabell th,
+.tabell td {
+border: 1px solid black;
 }

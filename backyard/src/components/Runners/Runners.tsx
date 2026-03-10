@@ -1,4 +1,4 @@
-
+import "./Runners.css";
 import type { RunnersProps } from "../../types";
 import {useAverageLapTime} from "../../hooks/useAverageLapTime";
 
@@ -8,8 +8,9 @@ const maxLaps = Math.max(...runners.map(r=> r.lapTimes.length));
 
 
 return (
-
-  <table>
+// Tabell
+  <table className="tabell">
+    {/* Tabellhuvud */}
     <thead>
       {/* Bygg tabellens rubrikrad */}
       <tr>
@@ -23,13 +24,15 @@ return (
         ))}
       </tr>
     </thead>
-            <tbody>
+      <tbody>
+        {/* För varje löpare i listan, skapa en ny tabellrad */}
         {runners.map((runner) => (
           <tr key={runner.id}>
             <td>{runner.id}</td>
             <td>{runner.name}</td>
+            {/* Räkna ut varje löpares medelvärde på alla varvtider */}
             <td>{useAverageLapTime(runner.lapTimes).toFixed(1)}</td>
-
+            {/* Varje löpares varvtider */}
             {Array.from({ length: maxLaps }).map((_, i) => (
               <td key={i}>
                 {runner.lapTimes[i] !== undefined ? runner.lapTimes[i] : "-"}
