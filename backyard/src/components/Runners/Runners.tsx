@@ -1,6 +1,11 @@
 import "./Runners.css";
 import type { RunnersProps } from "../../types";
-import {useAverageLapTime} from "../../hooks/useAverageLapTime";
+
+function calculateAverageLapTime(lapTimes: number[]): number {
+  if (lapTimes.length === 0) return 0;
+  const total = lapTimes.reduce((sum, time) => sum + time, 0);
+  return total / lapTimes.length;
+}
 
 const Runners: React.FC<RunnersProps> = ({runners}) => {
 //räkna ut max antal varv
@@ -31,7 +36,7 @@ return (
             <td>{runner.id}</td>
             <td>{runner.name}</td>
             {/* Räkna ut varje löpares medelvärde på alla varvtider */}
-            <td>{useAverageLapTime(runner.lapTimes).toFixed(1)}</td>
+            <td>{calculateAverageLapTime(runner.lapTimes).toFixed(1)}</td>
             {/* Varje löpares varvtider */}
             {Array.from({ length: maxLaps }).map((_, i) => (
               <td key={i}>

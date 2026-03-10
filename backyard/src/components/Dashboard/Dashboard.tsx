@@ -1,4 +1,4 @@
-import { runners } from "../../data/runnersData";
+import { runners } from "../../data/RunnersData";
 import Runners from "../Runners/Runners";
 
 export default function Dashboard () {
