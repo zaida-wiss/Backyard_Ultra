@@ -2,5 +2,6 @@ header {
   background-color: black;
   position: fixed;
   height: 50 px;
+  width: 100%;
   top:0;
 }
