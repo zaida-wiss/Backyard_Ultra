@@ -1,8 +1,48 @@
-.tabell {
-border-collapse: collapse;
+.tabell-wrapper {
+width: 100%;
+max-width: 100%;
+overflow-x: auto;
 border: 1px solid black;
 }
+
+.tabell {
+border-collapse: separate;
+border-spacing: 0;
+width: max-content;
+min-width: 100%;
+}
+
 .tabell th,
 .tabell td {
 border: 1px solid black;
+padding: 0.5rem 0.75rem;
+white-space: nowrap;
+background: #fff;
+}
+
+.sticky {
+position: sticky;
+background: #fff;
+}
+
+.col-nr {
+left: 0;
+min-width: 70px;
+z-index: 3;
+}
+
+.col-namn {
+left: 70px;
+min-width: 220px;
+z-index: 3;
+}
+
+.col-medel {
+left: 290px;
+min-width: 120px;
+z-index: 3;
+}
+
+.tabell thead .sticky {
+z-index: 4;
 }

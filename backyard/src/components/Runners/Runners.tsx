@@ -14,15 +14,16 @@ const maxLaps = Math.max(...runners.map(r=> r.lapTimes.length));
 
 return (
 // Tabell
-  <table className="tabell">
+<div className="tabell-wrapper">
+  <table className = "tabell">
     {/* Tabellhuvud */}
     <thead>
       {/* Bygg tabellens rubrikrad */}
       <tr>
         {/* Kolumnrubriker */}
-        <th>Nr.</th>
-        <th>Namn</th>
-        <th>Medeltid</th>
+        <th className ="sticky col-nr">Nr.</th>
+        <th className="sticky col-namn">Namn</th>
+        <th className="sticky col-medel">Medeltid</th>
         {/* Skapar en ny rubrikkolumn för varje varv */}
         {Array.from({ length: maxLaps }).map((_,i) => (
           <th key={i}>{i+1}</th>
@@ -33,10 +34,10 @@ return (
         {/* För varje löpare i listan, skapa en ny tabellrad */}
         {runners.map((runner) => (
           <tr key={runner.id}>
-            <td>{runner.id}</td>
-            <td>{runner.name}</td>
+            <td className="sticky col-nr">{runner.id}</td>
+            <td className="sticky col-namn">{runner.name}</td>
             {/* Räkna ut varje löpares medelvärde på alla varvtider */}
-            <td>{calculateAverageLapTime(runner.lapTimes).toFixed(1)}</td>
+            <td className="sticky col-medel">{calculateAverageLapTime(runner.lapTimes).toFixed(1)}</td>
             {/* Varje löpares varvtider */}
             {Array.from({ length: maxLaps }).map((_, i) => (
               <td key={i}>
@@ -47,6 +48,7 @@ return (
         ))}
       </tbody>
   </table>
+</div>
 
 );
 }
