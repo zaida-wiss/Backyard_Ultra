@@ -1,5 +1,5 @@
 import "./Runners.css";
-import type { RunnersProps } from "../../types";
+import type { RunnersProps } from "../../types/types";
 
 function calculateAverageLapTime(lapTimes: number[]): number {
   if (lapTimes.length === 0) return 0;
@@ -8,6 +8,7 @@ function calculateAverageLapTime(lapTimes: number[]): number {
 }
 
 const Runners: React.FC<RunnersProps> = ({runners}) => {
+  console.log("Runners:", runners);
 //räkna ut max antal varv
 const maxLaps = Math.max(...runners.map(r=> r.lapTimes.length));
 

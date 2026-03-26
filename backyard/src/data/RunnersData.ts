@@ -1,4 +1,4 @@
-import type {Runner} from "../types";
+import type {Runner} from "../types/types";
 
 export const runners: Runner[] = [
   { id: 1, name: "Erik Marklund", lapTimes: [] },
