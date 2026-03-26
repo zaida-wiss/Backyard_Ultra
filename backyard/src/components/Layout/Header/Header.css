@@ -11,7 +11,7 @@
   align-items: center;
   justify-content: flex-end;
   padding: 0 0.75rem;
-  border-bottom: 1px solid #23d5e0;
+  border-bottom: 1px solid lab(43.64% -46.43 35.43);
   box-sizing: border-box;
 }
 
@@ -32,7 +32,7 @@
 }
 
 .header__settings-btn:hover {
-  background: #23d5e0;
+  background: lab(43.64% -46.43 35.43);
   color: #0f0f0f;
 }
 
@@ -42,7 +42,7 @@
   right: 12px;
   background: #111;
   color: #fff;
-  border: 1px solid #22d3ee;
+  border: 1px solid lab(43.64% -46.43 35.43);
   border-radius: 8px;
   padding: 0.75rem;
   min-width: 160px;
