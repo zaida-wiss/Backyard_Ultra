@@ -2,11 +2,11 @@ body {
   height: 100%;
   display: flex;
   flex-direction: block;
+
 }
 
 form {
-  width: 100vw;
-  height: 100vh;
+  margin-top: 50%;
   display: flex;
   flex-direction: column;
   justify-content: center; /* centrerar vertikalt */
@@ -14,7 +14,50 @@ form {
 }
 
 input {
-  width: 100%;
+  width: 80%;
+  height: fit-content;
+  text-align: center;
+  font-size: 16px;
   box-sizing: border-box; /* så att padding/marginal räknas in i bredden */
   margin-bottom: 1rem;    /* valfritt, för mellanrum mellan fälten */
+  border-radius: 8px;
+}
+
+button{
+width: 50%;
+margin: 40px 0;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.5); /* halvtransparent bakgrund */
+  display: flex;
+  z-index: 1000;
+}
+
+.modal-content {
+  position: relative;
+  background: #fff;
+  padding: 2rem;
+  min-width: 330px;
+}
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 30px;         /* eller valfri storlek */
+  height: 30px;
+  border-radius: 100%;
+  background: #222;
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;     /* gör X:et större */
+  cursor: pointer;
+  margin: 0 auto;      /* centrerar knappen horisontellt om du vill */
 }

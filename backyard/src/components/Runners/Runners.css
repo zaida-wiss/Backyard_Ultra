@@ -19,7 +19,7 @@ table-layout: auto;  /* Låter kolumnerna anpassa sig efter innehållet */
 .tabell th,
 .tabell td {
 border: 1px solid black;
-padding: 0.5rem 0.75rem;
+padding: 0.2rem 0.4rem;
 white-space: nowrap;
 background: #fff;
 }

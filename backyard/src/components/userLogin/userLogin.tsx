@@ -27,7 +27,8 @@ export function UserLogin ({onClose}: UserLoginProps) {
 
 
   return(
-      <div className="modal-content">
+    <div className="modal-content">
+        <button className="modal-close" onClick={onClose}>x</button>
       <form onSubmit={handleSubmit}>
 
       {error && <div className="error">{error}</div>}
@@ -83,8 +84,8 @@ export function UserLogin ({onClose}: UserLoginProps) {
 
         <button type="submit">Logga in</button>
 
+
       </form>
-      <button onClick={onClose}>x</button>
     </div>
     );
   };
