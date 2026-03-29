@@ -22,21 +22,28 @@ export function UserLogin ({onClose}: UserLoginProps) {
     confirmEmail: "",
     password: "",
     confirmPassword: ""
-  })
+   });
+  const [fieldErrors, setFieldErrors] = useState({
+    userName: "",
+    email: "",
+    confirmEmail: "",
+    password: "",
+    confirmPassword: ""
+  });
+  const [success, setSuccess] = useState(false);
 
   //logik för inloggning
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // Kontrollera att e-postfälten matchar
-    if (user.email !== user.confirmEmail) {
-      setError("E-postadresserna måste stämma överens");
+    // Om något fält har felmeddelande, stoppa submit
+    if (Object.values(fieldErrors).some(msg => msg)) {
+      setError("Korrigera fälten ovan.");
+      setSuccess(false);
       return;
     }
-    if (user.password !== user.confirmPassword) {
-      setError("Lösenorden måste stämma överens");
-      return;
-    }
-    // Annan validering kan läggas här
+    setError("");
+    setSuccess(true);
+    // Här kan du lägga till logik för att skicka data till backend
   }
 
 
@@ -46,22 +53,21 @@ export function UserLogin ({onClose}: UserLoginProps) {
       <form onSubmit={handleSubmit}>
 
       {error && <div className="error">{error}</div>}
+      {success && <div className="success">Registrering lyckades!</div>}
 
         <input
           type="text"
           placeholder= "användarnamn"
           value={user.userName}
+          autoFocus
           onChange={e => {
             const value = e.target.value;
-            setUser({...user, userName:value});
-            if (value.length > 0 && value.length <= 4) {
-              //Visa felmeddelande eller nollställ dem
-              setError("Användarnamnet måste innehålla minst 5 bokstäver");
-            } else {
-              setError("");
-            }
+            setUser({ ...user, userName: value });
+            setFieldErrors(f => ({ ...f, userName: value.length > 0 && value.length <= 4 ? "Användarnamnet måste innehålla minst 5 bokstäver" : "" }));
           }}
         />
+
+        {fieldErrors.userName && <div className="field-error">{fieldErrors.userName}</div>}
 
         <input
           type="email"
@@ -70,16 +76,17 @@ export function UserLogin ({onClose}: UserLoginProps) {
           onChange= {e => {
             const value = e.target.value;
             setUser({...user, email:value});
+            let msg = "";
             if (/[åäö]/i.test(value)) {
-              setError("E-postadressen innehåller felaktiga symboler")
+              msg = "E-postadressen innehåller felaktiga symboler";
+            } else if (!value.includes("@")) {
+              msg = "Emailen måste innehålla @";
             }
-            else if(!value.includes("@")) {
-              setError("Emailen måste innehålla @")
-            } else {
-              setError("");
-            }
+            setFieldErrors(f => ({ ...f, email: msg }));
           }}
         />
+
+        {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
 
         <input
           type="email"
@@ -88,28 +95,24 @@ export function UserLogin ({onClose}: UserLoginProps) {
           onChange={e => {
             const value = e.target.value;
             setUser({ ...user, confirmEmail: value });
-            if (user.email && value !== user.email) {
-              setError("E-postadresserna måste stämma överens");
-            } else {
-              setError("");
-            }
+            setFieldErrors(f => ({ ...f, confirmEmail: user.email && value !== user.email ? "E-postadresserna måste stämma överens" : "" }));
           }}
         />
 
+        {fieldErrors.confirmEmail && <div className="field-error">{fieldErrors.confirmEmail}</div>}
+
         <input
           type="password"
-          placeholder= "lösenord"
-          value = {user.password}
-          onChange= {e => {
+          placeholder="lösenord"
+          value={user.password}
+          onChange={e => {
             const value = e.target.value;
-            setUser({...user, password: value});
-              if (value.length<=7) {
-                setError("Lösenordet behöver ha minst 8 tecken")
-                } else {
-                  setError("");
-                }
-              }}
+           setUser({ ...user, password: value });
+            setFieldErrors(f => ({ ...f, password: value.length <= 7 ? "Lösenordet behöver ha minst 8 tecken" : "" }));
+          }}
         />
+    
+        {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
 
         <input
           type="password"
@@ -117,16 +120,14 @@ export function UserLogin ({onClose}: UserLoginProps) {
           value = {user.confirmPassword}
           onChange= {e => {
             const value = e.target.value;
-            setUser({...user, confirmPassword: value});
-              if (user.password && value !== user.password ) {
-                setError("Lösenorden behöver stämma överens")
-                } else {
-                  setError("");
-                }
-              }}
+            setUser({ ...user, confirmPassword: value });
+            setFieldErrors(f => ({ ...f, confirmPassword: user.password && value !== user.password ? "Lösenorden behöver stämma överens" : "" }));
+          }}
         />
 
-        <button type="submit">Registrera</button>
+        {fieldErrors.confirmPassword && <div className="field-error">{fieldErrors.confirmPassword}</div>}
+
+         <button type="submit" disabled={!!error || Object.values(fieldErrors).some(msg => msg)}>Registrera</button>
 
 
       </form>
