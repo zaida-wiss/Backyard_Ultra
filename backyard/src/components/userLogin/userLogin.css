@@ -42,7 +42,8 @@ margin: 40px 0;
   position: relative;
   background: #fff;
   padding: 2rem;
-  min-width: 330px;
+  /* min-width: 330px; */
+  width: 100%;
 }
 .modal-close {
   position: absolute;

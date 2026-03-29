@@ -9,7 +9,9 @@ type UserLoginProps = {
 type UserData = {
   userName: string;
   email: string;
+  confirmEmail: string;
   password: string;
+  confirmPassword: string;
 };
 
 export function UserLogin ({onClose}: UserLoginProps) {
@@ -17,17 +19,29 @@ export function UserLogin ({onClose}: UserLoginProps) {
   const [user, setUser] = useState<UserData>({
     userName: "",
     email: "",
-    password: ""
+    confirmEmail: "",
+    password: "",
+    confirmPassword: ""
   })
 
   //logik för inloggning
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Kontrollera att e-postfälten matchar
+    if (user.email !== user.confirmEmail) {
+      setError("E-postadresserna måste stämma överens");
+      return;
+    }
+    if (user.password !== user.confirmPassword) {
+      setError("Lösenorden måste stämma överens");
+      return;
+    }
+    // Annan validering kan läggas här
   }
 
 
   return(
-    <div className="modal-content">
+      <div className="modal-content">
         <button className="modal-close" onClick={onClose}>x</button>
       <form onSubmit={handleSubmit}>
 
@@ -35,7 +49,7 @@ export function UserLogin ({onClose}: UserLoginProps) {
 
         <input
           type="text"
-          placeholder= "username"
+          placeholder= "användarnamn"
           value={user.userName}
           onChange={e => {
             const value = e.target.value;
@@ -68,8 +82,23 @@ export function UserLogin ({onClose}: UserLoginProps) {
         />
 
         <input
+          type="email"
+          placeholder="bekräfta email"
+          value={user.confirmEmail}
+          onChange={e => {
+            const value = e.target.value;
+            setUser({ ...user, confirmEmail: value });
+            if (user.email && value !== user.email) {
+              setError("E-postadresserna måste stämma överens");
+            } else {
+              setError("");
+            }
+          }}
+        />
+
+        <input
           type="password"
-          placeholder= "password"
+          placeholder= "lösenord"
           value = {user.password}
           onChange= {e => {
             const value = e.target.value;
@@ -82,7 +111,22 @@ export function UserLogin ({onClose}: UserLoginProps) {
               }}
         />
 
-        <button type="submit">Logga in</button>
+        <input
+          type="password"
+          placeholder= "bekräfta lösenordet"
+          value = {user.confirmPassword}
+          onChange= {e => {
+            const value = e.target.value;
+            setUser({...user, confirmPassword: value});
+              if (user.password && value !== user.password ) {
+                setError("Lösenorden behöver stämma överens")
+                } else {
+                  setError("");
+                }
+              }}
+        />
+
+        <button type="submit">Registrera</button>
 
 
       </form>
