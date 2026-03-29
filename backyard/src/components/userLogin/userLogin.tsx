@@ -90,7 +90,7 @@ export function UserLogin ({onClose}: UserLoginProps) {
 
         <input
           type="email"
-          placeholder="bekräfta email"
+          placeholder="email (bekräfta)"
           value={user.confirmEmail}
           onChange={e => {
             const value = e.target.value;
@@ -111,12 +111,12 @@ export function UserLogin ({onClose}: UserLoginProps) {
             setFieldErrors(f => ({ ...f, password: value.length <= 7 ? "Lösenordet behöver ha minst 8 tecken" : "" }));
           }}
         />
-    
+
         {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
 
         <input
           type="password"
-          placeholder= "bekräfta lösenordet"
+          placeholder= "lösenord (bekräfta)"
           value = {user.confirmPassword}
           onChange= {e => {
             const value = e.target.value;
