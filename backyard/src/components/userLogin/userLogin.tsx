@@ -16,6 +16,7 @@ type UserData = {
 
 export function UserLogin ({onClose}: UserLoginProps) {
   const [error, setError] = useState("");
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [user, setUser] = useState<UserData>({
     userName: "",
     email: "",
@@ -127,7 +128,17 @@ export function UserLogin ({onClose}: UserLoginProps) {
 
         {fieldErrors.confirmPassword && <div className="field-error">{fieldErrors.confirmPassword}</div>}
 
-         <button type="submit" disabled={!!error || Object.values(fieldErrors).some(msg => msg)}>Registrera</button>
+         <button type="submit" disabled={!!error || Object.values(fieldErrors).some(msg => msg)}>
+           {isRegisterMode ? "Registrera" : "Logga in"}
+         </button>
+
+         <p
+           className="toggle-mode-btn"
+           disabled={!!error || Object.values(fieldErrors).some(msg => msg)}
+           onClick={() => setIsRegisterMode(mode => !mode)}
+         >
+           {isRegisterMode ? "Har du redan ett konto? Logga in" : "Inget konto? Registrera konto"}
+         </p>
 
 
       </form>

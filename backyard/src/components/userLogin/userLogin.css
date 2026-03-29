@@ -66,7 +66,21 @@ button{
   margin: 0 auto;      /* centrerar knappen horisontellt om du vill */
 }
 
+.toggle-mode-btn {
+    background: none;
+    border: none;
+    color: #1976d2;
+    text-decoration: underline;
+    margin-top: 0;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+}
 
+.toggle-mode-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6; /* valfritt, för att visa att knappen är avaktiverad */
+}
 
 /* Fält-felmeddelande direkt under input */
 .field-error {
