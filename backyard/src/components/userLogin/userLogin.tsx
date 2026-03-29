@@ -1,4 +1,5 @@
 import {useState} from "react";
+import "./userLogin.css";
 
 
 type UserLoginProps = {
@@ -19,35 +20,14 @@ export function UserLogin ({onClose}: UserLoginProps) {
     password: ""
   })
 
-
   //logik för inloggning
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    if (user.userName.length <=4) {
-      //Visa felmeddelande eller returnera
-      setError("användarnamnet måste innehålla minst 5 bokstäver")
-      return;
-    }
-
-    if (!user.email.includes("@")) {
-      setError("emailen måste innehålla @")
-      return;
-    }
-    if (/[åäö]/i.test(user.email)) {
-      setError("E-postadressen innehåller felaktiga symboler")
-      return;
-    }
-
-    if (user.password.length<=7) {
-      setError("Lösenordet behöver ha minst 2 tecken")
-      return;
-    }
-    setError(""); // Nollställ fel om allt är ok
   }
 
+
   return(
-    <div className="modal-content">
+      <div className="modal-content">
       <form onSubmit={handleSubmit}>
 
       {error && <div className="error">{error}</div>}
@@ -56,30 +36,55 @@ export function UserLogin ({onClose}: UserLoginProps) {
           type="text"
           placeholder= "username"
           value={user.userName}
-          onChange={e =>setUser({
-          ...user, userName:e.target.value})}
+          onChange={e => {
+            const value = e.target.value;
+            setUser({...user, userName:value});
+            if (value.length > 0 && value.length <= 4) {
+              //Visa felmeddelande eller nollställ dem
+              setError("Användarnamnet måste innehålla minst 5 bokstäver");
+            } else {
+              setError("");
+            }
+          }}
         />
 
         <input
           type="email"
           placeholder= "email"
           value= {user.email}
-          onChange= {e => setUser({
-            ...user, email:e.target.value})}
-          />
+          onChange= {e => {
+            const value = e.target.value;
+            setUser({...user, email:value});
+            if (/[åäö]/i.test(value)) {
+              setError("E-postadressen innehåller felaktiga symboler")
+            }
+            else if(!value.includes("@")) {
+              setError("Emailen måste innehålla @")
+            } else {
+              setError("");
+            }
+          }}
+        />
 
         <input
           type="password"
           placeholder= "password"
           value = {user.password}
-          onChange= {e => setUser({
-            ...user, password: e.target.value})}
-          />
+          onChange= {e => {
+            const value = e.target.value;
+            setUser({...user, password: value});
+              if (value.length<=7) {
+                setError("Lösenordet behöver ha minst 8 tecken")
+                } else {
+                  setError("");
+                }
+              }}
+        />
 
-          <button type="submit">Logga in</button>
+        <button type="submit">Logga in</button>
 
       </form>
       <button onClick={onClose}>x</button>
     </div>
     );
-}
+  };
