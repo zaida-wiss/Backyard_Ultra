@@ -132,13 +132,14 @@ export function UserLogin ({onClose}: UserLoginProps) {
            {isRegisterMode ? "Registrera" : "Logga in"}
          </button>
 
-         <p
+         <button
+           type= "button"
            className="toggle-mode-btn"
            disabled={!!error || Object.values(fieldErrors).some(msg => msg)}
            onClick={() => setIsRegisterMode(mode => !mode)}
          >
            {isRegisterMode ? "Har du redan ett konto? Logga in" : "Inget konto? Registrera konto"}
-         </p>
+         </button>
 
 
       </form>
