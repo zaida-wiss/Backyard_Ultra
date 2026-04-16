@@ -1,0 +1,51 @@
+
+
+
+.tabell-wrapper {
+color:black;
+width: 100%;
+max-width: 100%;
+overflow-x: auto;
+border: 1px solid black;
+}
+
+.tabell {
+border-collapse: separate;
+border-spacing: 0;
+width: auto;         /* Anpassar bredden efter innehållet */
+table-layout: auto;  /* Låter kolumnerna anpassa sig efter innehållet */
+}
+
+.tabell th,
+.tabell td {
+border: 1px solid black;
+padding: 0.2rem 0.4rem;
+white-space: nowrap;
+background: #fff;
+}
+
+.sticky {
+position: sticky;
+background: #fff;
+}
+
+.col-nr {
+left: 0;
+z-index: 3;
+}
+
+.col-namn {
+left: 70px;
+text-align: left;
+min-width: 220px;
+z-index: 3;
+}
+
+.col-medel {
+left: 290px;
+z-index: 3;
+}
+
+.tabell thead .sticky {
+z-index: 4;
+}
