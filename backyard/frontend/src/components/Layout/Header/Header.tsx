@@ -1,11 +1,11 @@
 import "./Header.css";
-import { useState } from "react";
 import { UserLock } from "lucide-react";
-import {UserLogin} from "../../userLogin/userLogin";
+type HeaderProps = {
+  onLoginClick: () => void;
+};
 
 
-export default function Header() {
-  const [loginIsOpen, setLoginIsOpen] = useState(false);
+export default function Header({ onLoginClick }: HeaderProps) {
 
   return (
     <header className="header">
@@ -13,15 +13,10 @@ export default function Header() {
         type="button"
         className="header__user-lock"
         aria-label="Logga in"
-        onClick={() => setLoginIsOpen(true)}
+        onClick={onLoginClick}
       >
         <UserLock size={18} />
       </button>
-      {loginIsOpen && (
-        <div className="modal-overlay">
-          <UserLogin onClose= {() => setLoginIsOpen(false)}/>
-        </div>
-      )}
     </header>
   );
 }

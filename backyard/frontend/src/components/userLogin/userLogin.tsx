@@ -1,71 +1,41 @@
-import {useState} from "react";
+import { useUserLoginForm } from "./useUserLoginForm";
 import "./userLogin.css";
 
 
 type UserLoginProps = {
   onClose: () => void;
 };
-
-type UserData = {
-  userName: string;
-  email: string;
-  confirmEmail: string;
-  password: string;
-  confirmPassword: string;
-};
-
 export function UserLogin ({onClose}: UserLoginProps) {
-  const [error, setError] = useState("");
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
-  const [user, setUser] = useState<UserData>({
-    userName: "",
-    email: "",
-    confirmEmail: "",
-    password: "",
-    confirmPassword: ""
-   });
-  const [fieldErrors, setFieldErrors] = useState({
-    userName: "",
-    email: "",
-    confirmEmail: "",
-    password: "",
-    confirmPassword: ""
-  });
-  const [success, setSuccess] = useState(false);
-
-  //logik för inloggning
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    // Om något fält har felmeddelande, stoppa submit
-    if (Object.values(fieldErrors).some(msg => msg)) {
-      setError("Korrigera fälten ovan.");
-      setSuccess(false);
-      return;
-    }
-    setError("");
-    setSuccess(true);
-    // Här kan du lägga till logik för att skicka data till backend
-  }
-
+  const {
+    user,
+    error,
+    success,
+    fieldErrors,
+    isRegisterMode,
+    isFormBlocked,
+    setIsRegisterMode,
+    handleSubmit,
+    handleUserNameChange,
+    handleEmailChange,
+    handleConfirmEmailChange,
+    handlePasswordChange,
+    handleConfirmPasswordChange,
+  } = useUserLoginForm();
 
   return(
-      <div className="modal-content">
-        <button className="modal-close" onClick={onClose}>x</button>
+    <div className="modal-content">
+      <button className="modal-close" onClick={onClose}>x</button>
       <form onSubmit={handleSubmit}>
 
-      {error && <div className="error">{error}</div>}
-      {success && <div className="success">Registrering lyckades!</div>}
+        {error && <div className="error">{error}</div>}
+        {success && <div className="success">Registrering lyckades!</div>}
 
         <input
           type="text"
           placeholder= "användarnamn"
           value={user.userName}
           autoFocus
-          onChange={e => {
-            const value = e.target.value;
-            setUser({ ...user, userName: value });
-            setFieldErrors(f => ({ ...f, userName: value.length > 0 && value.length <= 4 ? "Användarnamnet måste innehålla minst 5 bokstäver" : "" }));
-          }}
+          onChange={e => handleUserNameChange(e.target.value)}
         />
 
         {fieldErrors.userName && <div className="field-error">{fieldErrors.userName}</div>}
@@ -74,17 +44,7 @@ export function UserLogin ({onClose}: UserLoginProps) {
           type="email"
           placeholder= "email"
           value= {user.email}
-          onChange= {e => {
-            const value = e.target.value;
-            setUser({...user, email:value});
-            let msg = "";
-            if (/[åäö]/i.test(value)) {
-              msg = "E-postadressen innehåller felaktiga symboler";
-            } else if (!value.includes("@")) {
-              msg = "Emailen måste innehålla @";
-            }
-            setFieldErrors(f => ({ ...f, email: msg }));
-          }}
+          onChange= {e => handleEmailChange(e.target.value)}
         />
 
         {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
@@ -93,11 +53,7 @@ export function UserLogin ({onClose}: UserLoginProps) {
           type="email"
           placeholder="email (bekräfta)"
           value={user.confirmEmail}
-          onChange={e => {
-            const value = e.target.value;
-            setUser({ ...user, confirmEmail: value });
-            setFieldErrors(f => ({ ...f, confirmEmail: user.email && value !== user.email ? "E-postadresserna måste stämma överens" : "" }));
-          }}
+          onChange={e => handleConfirmEmailChange(e.target.value)}
         />
 
         {fieldErrors.confirmEmail && <div className="field-error">{fieldErrors.confirmEmail}</div>}
@@ -106,11 +62,7 @@ export function UserLogin ({onClose}: UserLoginProps) {
           type="password"
           placeholder="lösenord"
           value={user.password}
-          onChange={e => {
-            const value = e.target.value;
-           setUser({ ...user, password: value });
-            setFieldErrors(f => ({ ...f, password: value.length <= 7 ? "Lösenordet behöver ha minst 8 tecken" : "" }));
-          }}
+          onChange={e => handlePasswordChange(e.target.value)}
         />
 
         {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
@@ -119,30 +71,26 @@ export function UserLogin ({onClose}: UserLoginProps) {
           type="password"
           placeholder= "lösenord (bekräfta)"
           value = {user.confirmPassword}
-          onChange= {e => {
-            const value = e.target.value;
-            setUser({ ...user, confirmPassword: value });
-            setFieldErrors(f => ({ ...f, confirmPassword: user.password && value !== user.password ? "Lösenorden behöver stämma överens" : "" }));
-          }}
+          onChange= {e => handleConfirmPasswordChange(e.target.value)}
         />
 
         {fieldErrors.confirmPassword && <div className="field-error">{fieldErrors.confirmPassword}</div>}
 
-         <button type="submit" disabled={!!error || Object.values(fieldErrors).some(msg => msg)}>
-           {isRegisterMode ? "Registrera" : "Logga in"}
-         </button>
+        <button type="submit" disabled={isFormBlocked}>
+          {isRegisterMode ? "Registrera" : "Logga in"}
+        </button>
 
-         <button
-           type= "button"
-           className="toggle-mode-btn"
-           disabled={!!error || Object.values(fieldErrors).some(msg => msg)}
-           onClick={() => setIsRegisterMode(mode => !mode)}
-         >
-           {isRegisterMode ? "Har du redan ett konto? Logga in" : "Inget konto? Registrera konto"}
-         </button>
+        <button
+          type= "button"
+          className="toggle-mode-btn"
+          disabled={isFormBlocked}
+          onClick={() => setIsRegisterMode(mode => !mode)}
+        >
+          {isRegisterMode ? "Har du redan ett konto? Logga in" : "Inget konto? Registrera konto"}
+        </button>
 
 
       </form>
     </div>
-    );
-  };
+  );
+}
