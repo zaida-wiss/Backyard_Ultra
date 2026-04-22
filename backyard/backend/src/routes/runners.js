@@ -47,7 +47,7 @@ router.post('/', (req, res) => {
     return res.status(400).json({
       error: {
         code: 'BAD_REQUEST',
-        message: 'name krävs',
+        message: 'namn krävs',
         status: 400,
       },
     });
