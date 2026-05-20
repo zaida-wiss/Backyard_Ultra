@@ -1,5 +1,5 @@
 .header {
-  background-color: #0f0f0f;
+  background-color: #142219;
   display: flex;
   position: fixed;
   height: 50px;
@@ -9,20 +9,33 @@
   right: 0;
   z-index: 20;
   align-items: center;
-  justify-content: flex-end;
-  padding: 0 0.75rem;
-  border-bottom: 1px solid lab(43.64% -46.43 35.43);
+  justify-content: space-between;
+  padding: 0 1rem;
+  border-bottom: 1px solid #315c40;
   box-sizing: border-box;
 }
 
-.header__user-lock {
+.header__brand {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.header__session {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+  font-size: 0.95rem;
+}
+
+.header__icon-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 999px;
-  border: 1px solid lab(43.64% -46.43 35.43);
+  border-radius: 8px;
+  border: 1px solid #7dab88;
   background: transparent;
   color: #ffffff;
   cursor: pointer;
@@ -31,23 +44,7 @@
   line-height: 1;
 }
 
-.header__user-lock:hover {
-  background: lab(43.64% -46.43 35.43);
-  color: #0f0f0f;
-}
-
-.header__modal {
-  position: absolute;
-  top: 56px;
-  right: 12px;
-  background: #111;
-  color: #fff;
-  border: 1px solid lab(43.64% -46.43 35.43);
-  border-radius: 8px;
-  padding: 0.75rem;
-  min-width: 160px;
-}
-
-.header__modal button {
-  margin-top: 0.5rem;
+.header__icon-button:hover {
+  background: #7dab88;
+  color: #142219;
 }

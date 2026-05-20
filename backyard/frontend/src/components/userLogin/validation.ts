@@ -7,12 +7,20 @@ export type FieldErrors = {
 };
 
 export function validateUserName(value: string): string {
-  return value.length > 0 && value.length <= 4
+  if (!value.trim()) {
+    return "Namn krävs";
+  }
+
+  return value.trim().length <= 4
     ? "Användarnamnet måste innehålla minst 5 bokstäver"
     : "";
 }
 
 export function validateEmail(value: string): string {
+  if (!value.trim()) {
+    return "Email krävs";
+  }
+
   if (/[åäö]/i.test(value)) {
     return "E-postadressen innehåller felaktiga symboler";
   }
