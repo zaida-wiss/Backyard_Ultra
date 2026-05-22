@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { competitions, runners } from "../data/store";
 import { createCompetition } from "../models/competition";
+import { filterCompetitions, parseCompetitionFilters } from "../services/competitionFilters";
 import type { Competition, CreateCompetitionInput } from "../types/domain";
 import HttpError from "../utils/httpError";
 
@@ -28,58 +29,8 @@ export const requireCompetitionOwner = (competition: Competition | undefined, or
 
 export const listCompetitions = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const organizerId = req.query.organizerId ? Number(req.query.organizerId) : null;
-    const type = req.query.type ? String(req.query.type).toLowerCase() : null;
-    const place = req.query.place ? String(req.query.place).toLowerCase() : null;
-    const date = req.query.date ? String(req.query.date) : null;
-    const startsAfter = req.query.startsAfter ? String(req.query.startsAfter) : null;
-    const endsBefore = req.query.endsBefore ? String(req.query.endsBefore) : null;
-
-    if (req.query.organizerId && Number.isNaN(organizerId)) {
-      throw new HttpError(400, 'BAD_REQUEST', 'organizerId måste vara ett tal');
-    }
-
-    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      throw new HttpError(400, 'BAD_REQUEST', 'date måste skrivas som YYYY-MM-DD');
-    }
-
-    if (startsAfter && Number.isNaN(Date.parse(startsAfter))) {
-      throw new HttpError(400, 'BAD_REQUEST', 'startsAfter måste vara ett giltigt datum');
-    }
-
-    if (endsBefore && Number.isNaN(Date.parse(endsBefore))) {
-      throw new HttpError(400, 'BAD_REQUEST', 'endsBefore måste vara ett giltigt datum');
-    }
-
-    let result = competitions;
-
-    if (organizerId) {
-      result = result.filter((competition) => competition.organizerId === organizerId);
-    }
-
-    if (type) {
-      result = result.filter((competition) => competition.type.toLowerCase().includes(type));
-    }
-
-    if (place) {
-      result = result.filter((competition) => competition.place.toLowerCase().includes(place));
-    }
-
-    if (date) {
-      result = result.filter((competition) => (
-        competition.startAt.slice(0, 10) <= date && competition.endAt.slice(0, 10) >= date
-      ));
-    }
-
-    if (startsAfter) {
-      result = result.filter((competition) => Date.parse(competition.startAt) >= Date.parse(startsAfter));
-    }
-
-    if (endsBefore) {
-      result = result.filter((competition) => Date.parse(competition.endAt) <= Date.parse(endsBefore));
-    }
-
-    return res.json(result);
+    const filters = parseCompetitionFilters(req.query as Record<string, unknown>);
+    return res.json(filterCompetitions(competitions, filters));
   } catch (err) {
     return next(err);
   }
