@@ -10,7 +10,7 @@ export const createCompetition = ({
   place,
 }: CreateCompetitionInput): Competition => {
   return {
-    id: createId('competition'),
+    id: String(createId('competition')),
     organizerId,
     name,
     type,

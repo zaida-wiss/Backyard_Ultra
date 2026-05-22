@@ -1,5 +1,5 @@
 export type Organizer = {
-  id: number;
+  id: string;
   name: string;
   email: string;
   passwordHash: string;
@@ -9,7 +9,7 @@ export type Organizer = {
 export type PublicOrganizer = Omit<Organizer, "passwordHash">;
 
 export type RunnerAccount = {
-  id: number;
+  id: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -21,7 +21,7 @@ export type RunnerAccount = {
 export type PublicRunnerAccount = Omit<RunnerAccount, "passwordHash">;
 
 export type Competition = {
-  id: number;
+  id: string;
   organizerId: number;
   name: string;
   type: string;
@@ -35,7 +35,7 @@ export type Competition = {
 export type RunnerStatus = "registered";
 
 export type Runner = {
-  id: number;
+  id: string;
   competitionId: number;
   runnerAccountId: number | null;
   firstName: string;
