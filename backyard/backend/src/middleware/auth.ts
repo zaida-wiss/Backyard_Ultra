@@ -1,60 +1,80 @@
 import type { NextFunction, Request, Response } from "express";
-import { organizers, runnerAccounts } from "../data/store";
-import HttpError from "../errors/httpError";
-import { verifyToken } from "../utils/security";
 
-export const requireAuth = async (req: Request, _res: Response, next: NextFunction) => {
+import HttpError from "../errors/httpError";
+import { OrganizerModel, toPublicOrganizer } from "../models/organizer.model";
+import { RunnerAccountModel, toPublicRunnerAccount } from "../models/runnerAccount.model";
+import { verifyToken } from "../utils/security";
+import type { TokenPayload } from "../types/domain";
+
+const getBearerToken = (req: Request) => {
   const header = req.headers.authorization;
 
-  if (!header || !header.startsWith('Bearer ')) {
-    return next(new HttpError(401, 'UNAUTHORIZED', 'Du måste vara inloggad som arrangör'));
+  if (!header || !header.startsWith("Bearer ")) {
+    return null;
   }
 
-  const token = header.replace('Bearer ', '');
-  const payload = verifyToken(token);
+  return header.replace("Bearer ", "");
+};
+
+const getTokenPayload = (req: Request): TokenPayload => {
+  const token = getBearerToken(req);
+  const payload = token ? verifyToken(token) : null;
 
   if (!payload) {
-    return next(new HttpError(401, 'UNAUTHORIZED', 'Token saknas eller är ogiltig'));
+    throw new HttpError(401, "UNAUTHORIZED", "Token saknas eller är ogiltig");
   }
 
-  if (payload.role !== "organizer") {
-    return next(new HttpError(403, 'FORBIDDEN', 'Du måste vara inloggad som arrangör'));
-  }
+  return payload;
+};
 
-  const organizer = organizers.find((currentOrganizer) => currentOrganizer.id === payload.sub);
+const requirePayloadRole = (
+  payload: TokenPayload,
+  expectedRole: TokenPayload["role"],
+  message: string,
+) => {
+  if (payload.role !== expectedRole) {
+    throw new HttpError(403, "FORBIDDEN", message);
+  }
+};
+
+const getOrganizerFromPayload = async (payload: TokenPayload) => {
+  requirePayloadRole(payload, "organizer", "Du måste vara inloggad som arrangör");
+
+  const organizer = await OrganizerModel.findById(payload.sub);
 
   if (!organizer) {
-    return next(new HttpError(401, 'UNAUTHORIZED', 'Arrangören finns inte längre'));
+    throw new HttpError(401, "UNAUTHORIZED", "Arrangören finns inte längre");
   }
 
-  req.organizer = organizer;
-  return next();
+  return toPublicOrganizer(organizer);
+};
+
+const getRunnerAccountFromPayload = async (payload: TokenPayload) => {
+  requirePayloadRole(payload, "runner", "Du måste vara inloggad som löpare");
+
+  const runnerAccount = await RunnerAccountModel.findById(payload.sub);
+
+  if (!runnerAccount) {
+    throw new HttpError(401, "UNAUTHORIZED", "Löparkontot finns inte längre");
+  }
+
+  return toPublicRunnerAccount(runnerAccount);
+};
+
+export const requireAuth = async (req: Request, _res: Response, next: NextFunction) => {
+  try {
+    req.organizer = await getOrganizerFromPayload(getTokenPayload(req));
+    return next();
+  } catch (error) {
+    return next(error);
+  }
 };
 
 export const requireRunnerAuth = async (req: Request, _res: Response, next: NextFunction) => {
-  const header = req.headers.authorization;
-
-  if (!header || !header.startsWith('Bearer ')) {
-    return next(new HttpError(401, 'UNAUTHORIZED', 'Du måste vara inloggad som löpare'));
+  try {
+    req.runnerAccount = await getRunnerAccountFromPayload(getTokenPayload(req));
+    return next();
+  } catch (error) {
+    return next(error);
   }
-
-  const token = header.replace('Bearer ', '');
-  const payload = verifyToken(token);
-
-  if (!payload) {
-    return next(new HttpError(401, 'UNAUTHORIZED', 'Token saknas eller är ogiltig'));
-  }
-
-  if (payload.role !== "runner") {
-    return next(new HttpError(403, 'FORBIDDEN', 'Du måste vara inloggad som löpare'));
-  }
-
-  const runnerAccount = runnerAccounts.find((currentRunner) => currentRunner.id === payload.sub);
-
-  if (!runnerAccount) {
-    return next(new HttpError(401, 'UNAUTHORIZED', 'Löparkontot finns inte längre'));
-  }
-
-  req.runnerAccount = runnerAccount;
-  return next();
 };

@@ -1,55 +1,78 @@
 import type { NextFunction, Request, Response } from "express";
-import { competitions, runners } from "../data/store";
-import { createCompetition } from "../models/competition.model";
-import type { ValidatedCompetitionBody } from "../schemas/competitionSchema";
-import { filterCompetitions } from "../services/competitionFilters";
-import type { Competition } from "../types/domain";
-import HttpError from "../errors/httpError";
+import { Types } from "mongoose";
 
-export const getCompetitionOrThrow = (id: number): Competition => {
-  const competition = competitions.find((currentCompetition) => currentCompetition.id === id);
+import HttpError from "../errors/httpError";
+import {
+  CompetitionModel,
+  type CompetitionDocument,
+  toCompetitionResponse,
+} from "../models/competition.model";
+import { RunnerModel } from "../models/runner.model";
+import type { ValidatedCompetitionBody } from "../schemas/competitionSchema";
+import { buildCompetitionQuery } from "../services/competitionQuery";
+
+const toDatabaseDate = (dateTimeLocal: string) => new Date(`${dateTimeLocal}:00.000Z`);
+
+const getRouteParam = (value: string | string[]) => {
+  return Array.isArray(value) ? value[0] : value;
+};
+
+const toObjectIdOrThrow = (id: string, message: string) => {
+  if (!Types.ObjectId.isValid(id)) {
+    throw new HttpError(404, "NOT_FOUND", message);
+  }
+
+  return new Types.ObjectId(id);
+};
+
+export const getCompetitionOrThrow = async (id: string): Promise<CompetitionDocument> => {
+  const competition = await CompetitionModel.findById(
+    toObjectIdOrThrow(id, "Tävlingen finns inte"),
+  );
 
   if (!competition) {
-    throw new HttpError(404, 'COMPETITION_NOT_FOUND', `Ingen tävling med id ${id} hittades`);
+    throw new HttpError(404, "COMPETITION_NOT_FOUND", `Ingen tävling med id ${id} hittades`);
   }
 
   return competition;
 };
 
-export const requireCompetitionOwner = (competition: Competition | undefined, organizerId: number) => {
-  if (!competition) {
-    throw new HttpError(404, 'COMPETITION_NOT_FOUND', 'Tävlingen finns inte');
-  }
-
-  if (competition.organizerId !== organizerId) {
-    throw new HttpError(403, 'FORBIDDEN', 'Du kan bara ändra dina egna tävlingar');
+export const requireCompetitionOwner = (
+  competition: CompetitionDocument,
+  organizerId: string,
+) => {
+  if (competition.organizerId.toString() !== organizerId) {
+    throw new HttpError(403, "FORBIDDEN", "Du kan bara ändra dina egna tävlingar");
   }
 };
 
 export const listCompetitions = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.competitionFilters) {
-      throw new HttpError(500, 'FILTERS_NOT_PARSED', 'Tävlingsfilter saknas');
+      throw new HttpError(500, "FILTERS_NOT_PARSED", "Tävlingsfilter saknas");
     }
 
-    return res.json(filterCompetitions(competitions, req.competitionFilters));
-  } catch (err) {
-    return next(err);
+    const competitions = await CompetitionModel.find(
+      buildCompetitionQuery(req.competitionFilters),
+    ).sort({ startAt: 1 });
+
+    return res.json(competitions.map(toCompetitionResponse));
+  } catch (error) {
+    return next(error);
   }
 };
 
 export const getCompetitionById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = Number(req.params.id);
-    const competition = getCompetitionOrThrow(id);
-    const registeredRunners = runners.filter((runner) => runner.competitionId === id);
+    const competition = await getCompetitionOrThrow(getRouteParam(req.params.id));
+    const runnersCount = await RunnerModel.countDocuments({ competitionId: competition._id });
 
     return res.json({
-      ...competition,
-      runnersCount: registeredRunners.length,
+      ...toCompetitionResponse(competition),
+      runnersCount,
     });
-  } catch (err) {
-    return next(err);
+  } catch (error) {
+    return next(error);
   }
 };
 
@@ -58,29 +81,34 @@ export const createCompetitionForOrganizer = async (
   res: Response,
   next: NextFunction,
 ) => {
-  if (!req.organizer) {
-    return next(new HttpError(401, 'UNAUTHORIZED', 'Du måste vara inloggad som arrangör'));
+  try {
+    if (!req.organizer) {
+      throw new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som arrangör");
+    }
+
+    const validatedBody = req.validatedBody as ValidatedCompetitionBody;
+    const competition = await CompetitionModel.create({
+      organizerId: req.organizer.id,
+      name: validatedBody.name,
+      type: validatedBody.type,
+      place: validatedBody.place,
+      startAt: toDatabaseDate(validatedBody.startAt),
+      endAt: toDatabaseDate(validatedBody.endAt),
+    });
+
+    return res.status(201).json(toCompetitionResponse(competition));
+  } catch (error) {
+    return next(error);
   }
-
-  const validatedBody = req.validatedBody as ValidatedCompetitionBody;
-  const competition = createCompetition({
-    organizerId: req.organizer.id,
-    ...validatedBody,
-  });
-
-  competitions.push(competition);
-
-  return res.status(201).json(competition);
 };
 
 export const updateCompetition = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.organizer) {
-      throw new HttpError(401, 'UNAUTHORIZED', 'Du måste vara inloggad som arrangör');
+      throw new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som arrangör");
     }
 
-    const id = Number(req.params.id);
-    const competition = getCompetitionOrThrow(id);
+    const competition = await getCompetitionOrThrow(getRouteParam(req.params.id));
     const validatedBody = req.validatedBody as ValidatedCompetitionBody;
 
     requireCompetitionOwner(competition, req.organizer.id);
@@ -88,38 +116,32 @@ export const updateCompetition = async (req: Request, res: Response, next: NextF
     competition.name = validatedBody.name;
     competition.type = validatedBody.type;
     competition.place = validatedBody.place;
-    competition.startAt = validatedBody.startAt;
-    competition.endAt = validatedBody.endAt;
-    competition.updatedAt = new Date().toISOString();
+    competition.startAt = toDatabaseDate(validatedBody.startAt);
+    competition.endAt = toDatabaseDate(validatedBody.endAt);
 
-    return res.json(competition);
-  } catch (err) {
-    return next(err);
+    await competition.save();
+
+    return res.json(toCompetitionResponse(competition));
+  } catch (error) {
+    return next(error);
   }
 };
 
 export const deleteCompetition = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.organizer) {
-      throw new HttpError(401, 'UNAUTHORIZED', 'Du måste vara inloggad som arrangör');
+      throw new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som arrangör");
     }
 
-    const id = Number(req.params.id);
-    const competition = getCompetitionOrThrow(id);
+    const competition = await getCompetitionOrThrow(getRouteParam(req.params.id));
 
     requireCompetitionOwner(competition, req.organizer.id);
 
-    const competitionIndex = competitions.findIndex((currentCompetition) => currentCompetition.id === id);
-    competitions.splice(competitionIndex, 1);
-
-    for (let index = runners.length - 1; index >= 0; index -= 1) {
-      if (runners[index].competitionId === id) {
-        runners.splice(index, 1);
-      }
-    }
+    await RunnerModel.deleteMany({ competitionId: competition._id });
+    await competition.deleteOne();
 
     return res.status(204).send();
-  } catch (err) {
-    return next(err);
+  } catch (error) {
+    return next(error);
   }
 };

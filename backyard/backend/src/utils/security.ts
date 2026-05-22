@@ -1,72 +1,69 @@
-import crypto from "node:crypto";
-import type { AuthRole, Organizer, RunnerAccount, TokenPayload } from "../types/domain";
+import bcrypt from "bcrypt";
+import jwt, { type JwtPayload } from "jsonwebtoken";
 
-const TOKEN_TTL_MS = 1000 * 60 * 60 * 2;
-const AUTH_SECRET = process.env.AUTH_SECRET || 'dev-secret-change-me';
+import type { AuthRole, TokenPayload } from "../types/domain";
 
-function encode(value: unknown): string {
-  return Buffer.from(JSON.stringify(value)).toString('base64url');
-}
-
-function sign(payload: string): string {
-  return crypto.createHmac('sha256', AUTH_SECRET).update(payload).digest('base64url');
-}
-
-export const hashPassword = (password: string): string => {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.scryptSync(password, salt, 64).toString('hex');
-  return `${salt}:${hash}`;
+type TokenUser = {
+  id: string;
+  email: string;
 };
 
-export const verifyPassword = (password: string, storedPassword: string): boolean => {
-  const [salt, hash] = storedPassword.split(':');
+const TOKEN_TTL = "2h";
 
-  if (!salt || !hash) {
-    return false;
-  }
+const getAuthSecret = () => {
+  const secret = process.env.AUTH_SECRET || "dev-secret-change-me";
 
-  const passwordHash = crypto.scryptSync(password, salt, 64).toString('hex');
-  return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(passwordHash, 'hex'));
+  return secret;
 };
 
-export const createToken = (user: Organizer | RunnerAccount, role: AuthRole): string => {
-  const header = encode({ alg: 'HS256', typ: 'JWT' });
-  const payload = encode({
-    sub: user.id,
-    email: user.email,
-    role,
-    exp: Date.now() + TOKEN_TTL_MS,
-  });
-  const signature = sign(`${header}.${payload}`);
-  return `${header}.${payload}.${signature}`;
+export const hashPassword = async (password: string): Promise<string> => {
+  return bcrypt.hash(password, 12);
+};
+
+export const verifyPassword = async (
+  password: string,
+  storedPassword: string,
+): Promise<boolean> => {
+  return bcrypt.compare(password, storedPassword);
+};
+
+export const createToken = (user: TokenUser, role: AuthRole): string => {
+  return jwt.sign(
+    {
+      sub: user.id,
+      email: user.email,
+      role,
+    },
+    getAuthSecret(),
+    { expiresIn: TOKEN_TTL },
+  );
 };
 
 export const verifyToken = (token: string): TokenPayload | null => {
   try {
-    const [header, payload, signature] = token.split('.');
+    const payload = jwt.verify(token, getAuthSecret());
 
-    if (!header || !payload || !signature) {
+    if (typeof payload === "string") {
       return null;
     }
 
-    const expectedSignature = sign(`${header}.${payload}`);
+    const jwtPayload = payload as JwtPayload & {
+      sub?: string;
+      email?: string;
+      role?: AuthRole;
+    };
 
-    if (signature.length !== expectedSignature.length) {
+    if (!jwtPayload.sub || !jwtPayload.email || !jwtPayload.role || !jwtPayload.exp) {
       return null;
     }
 
-    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
-      return null;
-    }
-
-    const parsedPayload = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as TokenPayload;
-
-    if (parsedPayload.exp < Date.now()) {
-      return null;
-    }
-
-    return parsedPayload;
-  } catch (err) {
+    return {
+      sub: jwtPayload.sub,
+      email: jwtPayload.email,
+      role: jwtPayload.role,
+      exp: jwtPayload.exp,
+    };
+  } catch {
     return null;
   }
 };

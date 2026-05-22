@@ -1,31 +1,40 @@
-import type { CreateRunnerAccountInput, PublicRunnerAccount, RunnerAccount } from "../types/domain";
-import { createId } from "../utils/ids";
+import {
+  Schema,
+  model,
+  type HydratedDocument,
+  type InferSchemaType,
+} from "mongoose";
 
-export const createRunnerAccount = ({
-  firstName,
-  lastName,
-  email,
-  passwordHash,
-  club,
-}: CreateRunnerAccountInput): RunnerAccount => {
-  return {
-    id: createId('runnerAccount'),
-    firstName,
-    lastName,
-    email,
-    passwordHash,
-    club: club || null,
-    createdAt: new Date().toISOString(),
-  };
-};
+const runnerAccountSchema = new Schema(
+  {
+    firstName: { type: String, required: true, trim: true },
+    lastName: { type: String, required: true, trim: true },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    passwordHash: { type: String, required: true },
+    club: { type: String, default: null, trim: true },
+  },
+  { timestamps: true },
+);
 
-export const toPublicRunnerAccount = (runnerAccount: RunnerAccount): PublicRunnerAccount => {
+export type RunnerAccountFields = InferSchemaType<typeof runnerAccountSchema>;
+export type RunnerAccountDocument = HydratedDocument<RunnerAccountFields>;
+
+export const RunnerAccountModel = model("RunnerAccount", runnerAccountSchema);
+
+export const toPublicRunnerAccount = (runnerAccount: RunnerAccountDocument) => {
   return {
     id: runnerAccount.id,
     firstName: runnerAccount.firstName,
     lastName: runnerAccount.lastName,
     email: runnerAccount.email,
-    club: runnerAccount.club,
-    createdAt: runnerAccount.createdAt,
+    club: runnerAccount.club ?? null,
+    createdAt: runnerAccount.createdAt.toISOString(),
+    updatedAt: runnerAccount.updatedAt.toISOString(),
   };
 };

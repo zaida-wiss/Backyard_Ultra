@@ -1,7 +1,8 @@
+import { Types } from "mongoose";
 import HttpError from "../errors/httpError";
 
 export type CompetitionFilters = {
-  organizerId: number | null;
+  organizerId: string | null;
   type: string | null;
   place: string | null;
   date: string | null;
@@ -21,20 +22,18 @@ const toSingleString = (value: unknown): string | null => {
   return String(value);
 };
 
-const parseOrganizerId = (value: unknown): number | null => {
+const parseOrganizerId = (value: unknown): string | null => {
   const organizerId = toSingleString(value);
 
   if (!organizerId) {
     return null;
   }
 
-  const parsedOrganizerId = Number(organizerId);
-
-  if (Number.isNaN(parsedOrganizerId)) {
-    throw new HttpError(400, "BAD_REQUEST", "organizerId måste vara ett tal");
+  if (!Types.ObjectId.isValid(organizerId)) {
+    throw new HttpError(400, "BAD_REQUEST", "organizerId måste vara ett giltigt MongoDB-id");
   }
 
-  return parsedOrganizerId;
+  return organizerId;
 };
 
 const parseDate = (value: unknown): string | null => {
