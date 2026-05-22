@@ -1,100 +1,134 @@
-# Workshop: Backendstruktur och kursmål vecka 1-7
+# Workshop: fixa backend så den motsvarar vecka 1-7
 
-Den här workshoppen är till för att du själv ska kunna kontrollera om Backyard Ultra-backenden har den struktur och funktionalitet som studiematerialet går igenom vecka 1-7.
+Den här filen guidar dig genom vad som redan är bra i Backyard Ultra-backenden och vad du behöver uppdatera för att implementationen tydligare ska motsvara kursens vecka 1-7.
 
 Arbeta så här:
 
 1. Läs frågan först.
-2. Försök svara utan att titta på facit.
+2. Försök svara själv.
 3. Öppna filen som nämns.
-4. Jämför med kodexemplet.
-5. Markera checklistan.
+4. Skriv av kodexemplet.
+5. Kör `npm run build` och sedan testerna.
+6. Markera checklistan när du kan förklara varför ändringen behövs.
 
-Du har redan gjort mycket rätt: projektet har Express, routes, controllers, TypeScript, validering, felhantering, auth, filtrering och tester. Det viktigaste nästa steget är att kunna förklara varför varje del finns.
+Du har redan gjort mycket rätt: projektet har Express, routes, controllers, TypeScript, validering, felhantering, auth, filtrering och tester. Det viktigaste som saknas är att vissa delar fortfarande bara använder in-memory arrays i `data/store.ts`.
 
-## Backendstruktur enligt studiematerialet
+## Snabb bild
 
-Studiematerialet tränar dig på att dela upp ett Express-projekt efter ansvar. Det betyder att varje mapp ska ha en tydlig uppgift.
+| Vecka | Område | Status | Viktigaste fix |
+| --- | --- | --- | --- |
+| 1 | Node.js och Express | Nästan klart | Behåll uppdelningen `app.ts` och `server.ts`. |
+| 2 | REST, routes och middleware | Nästan klart | Kontrollera att alla routes går via `/api/v1`. |
+| 3 | TypeScript | Nästan klart | Byt id-typer från `number` till `string` när MongoDB används. |
+| 4 | MongoDB och Mongoose | Måste fixas | Skapa riktiga Mongoose models och använd dem i controllers. |
+| 5 | Relationer, filter och testning | Delvis klart | Låt relationer och filter fungera mot MongoDB. |
+| 6 | Validering och felhantering | Nästan klart | Behåll validering före controllers och central error handler. |
+| 7 | Säkerhet, lösenord och token | Delvis klart | Byt egen crypto-token till `bcrypt` och `jsonwebtoken`. |
 
-En bra målstruktur ser ut så här:
+## Det största gapet
 
-```text
-src/
-  app.ts
-  server.ts
-  config/
-    database.ts
-  routes/
-    competitions-route.ts
-    organizers-route.ts
-    runners-route.ts
-  controllers/
-    competitionsController.ts
-    organizersController.ts
-    runnersController.ts
-  models/
-    competition.model.ts
-    organizer.model.ts
-    runner.model.ts
-    runnerAccount.model.ts
-  schemas/
-    competitionSchema.ts
-    competitionFiltersSchema.ts
-    organizerSchema.ts
-    runnerSchema.ts
-  middleware/
-    auth.ts
-    competitionFilters.ts
-    validate.ts
-    errorHandler.ts
-  services/
-    competitionFilters.ts
-  data/
-    store.ts
-  utils/
-    security.ts
-  errors/
-    httpError.ts
-  types/
-    domain.ts
-    express.d.ts
-  __tests__/
-    app.test.ts
+Fråga till dig: om en controller gör detta, var sparas datan?
+
+```ts
+competitions.push(competition);
 ```
 
-Det viktiga är inte att alla projekt måste se exakt likadana ut. Det viktiga är att du kan svara på frågan: vilken fil ansvarar för vad?
+Svar: i serverns minne, inte i MongoDB.
 
-## Vad varje del gör
+Det är viktigt eftersom data i minnet försvinner när servern startar om. MongoDB behövs för att datan ska finnas kvar.
 
-| Del | Ansvar | Exempel i ditt projekt |
-| --- | --- | --- |
-| `app.ts` | Skapar Express-appen och monterar middleware/routes | `src/app.ts` |
-| `server.ts` | Startar servern och kopplar till MongoDB | `src/server.ts` |
-| `routes/` | Bestämmer URL och HTTP-metod | `src/routes/competitions-route.ts` |
-| `controllers/` | Tar emot request och skickar response | `src/controllers/competitionsController.ts` |
-| `models/` | Beskriver data eller skapar dataobjekt | `src/models/competition.model.ts` |
-| `schemas/` | Valideringsschema för request body och query | `src/schemas/competitionFiltersSchema.ts` |
-| `middleware/` | Körs före/efter controllers | `src/middleware/competitionFilters.ts` |
-| `errorHandler` | Samlar API-fel på ett ställe | `src/middleware/errorHandler.ts` |
-| `services/` | Logik som inte behöver känna till Express | `src/services/competitionFilters.ts` |
-| `data/` | Tillfällig in-memory data före full MongoDB-migrering | `src/data/store.ts` |
-| `config/` | Läser miljö och anslutningar | `src/config/database.ts` |
-| `types/` | TypeScript-typer | `src/types/domain.ts` |
-| `utils/` | Små hjälpfunktioner | `src/utils/security.ts` |
-| `errors/` | Egna felklasser | `src/errors/httpError.ts` |
-| `__tests__/` | Automatiska tester | `src/__tests__/app.test.ts` |
+## Filer du främst ska uppdatera
 
-### Fråga till dig
+| Fil | Varför |
+| --- | --- |
+| `backyard/backend/package.json` | Lägg till bibliotek för bcrypt, JWT och testdatabas. |
+| `backyard/backend/src/types/domain.ts` | Anpassa typer till MongoDB-id som är strängar. |
+| `backyard/backend/src/models/competition.model.ts` | Skapa riktig Mongoose model. |
+| `backyard/backend/src/models/organizer.model.ts` | Skapa riktig Mongoose model för arrangörer. |
+| `backyard/backend/src/models/runner.model.ts` | Skapa riktig Mongoose model för anmälningar/löpare. |
+| `backyard/backend/src/models/runnerAccount.model.ts` | Skapa riktig Mongoose model för löparkonton. |
+| `backyard/backend/src/controllers/competitionsController.ts` | Läs och skriv tävlingar via MongoDB. |
+| `backyard/backend/src/controllers/organizersController.ts` | Registrera och logga in arrangörer via MongoDB. |
+| `backyard/backend/src/controllers/runnersController.ts` | Registrera löparkonton och anmälningar via MongoDB. |
+| `backyard/backend/src/middleware/auth.ts` | Hämta inloggad användare från MongoDB. |
+| `backyard/backend/src/utils/security.ts` | Använd bcrypt och JWT. |
+| `backyard/backend/src/__tests__/app.test.ts` | Testa mot en testdatabas, inte mot arrays. |
 
-Om en request kommer in här:
+## Installera paket
+
+Öppna terminalen:
+
+```bash
+cd backyard/backend
+npm install bcrypt jsonwebtoken
+npm install -D @types/bcrypt @types/jsonwebtoken mongodb-memory-server
+```
+
+Varför? `bcrypt` används för lösenord, `jsonwebtoken` för token och `mongodb-memory-server` gör att tester kan köra mot en tillfällig MongoDB-databas.
+
+Alternativ: du kan använda Node `crypto`, som projektet redan gör, men kursmålet blir tydligare om du visar att du kan använda vanliga bibliotek som `bcrypt` och JWT.
+
+## Vecka 1: Express och startflöde
+
+### Fråga
+
+Varför är det bra att ha både `app.ts` och `server.ts`?
+
+Ledtråd: vilken fil vill testerna importera utan att servern börjar lyssna på en fast port?
+
+### Status i ditt projekt
+
+Det här är redan bra:
+
+- `backyard/backend/src/app.ts` skapar Express-appen.
+- `backyard/backend/src/server.ts` startar servern.
+- `app.ts` exporteras så tester kan importera appen.
+
+### Kontrollkod
+
+Din `app.ts` ska fortsätta se ut ungefär så här:
+
+```ts
+import cors from "cors";
+import express from "express";
+import morgan from "morgan";
+
+import competitionsRouter from "./routes/competitions-route";
+import organizersRouter from "./routes/organizers-route";
+import runnersRouter from "./routes/runners-route";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+app.use(morgan("dev"));
+
+app.use("/api/v1/organizers", organizersRouter);
+app.use("/api/v1/competitions", competitionsRouter);
+app.use("/api/v1/runners", runnersRouter);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+export default app;
+```
+
+Varför? Utan `express.json()` kan backend inte läsa JSON från request body. Utan export av `app` blir tester svårare.
+
+Bra jobbat här: du har redan den viktiga uppdelningen på plats. Öva på att kunna säga högt vad varje fil ansvarar för.
+
+## Vecka 2: REST, routes och middleware
+
+### Fråga
+
+Vilken ordning går en request genom?
 
 ```text
 POST /api/v1/competitions
 ```
 
-Vilken ordning går den genom?
-
-Försök svara själv först.
+Försök svara innan du läser vidare.
 
 ### Rimlig ordning
 
@@ -105,372 +139,464 @@ app.ts
   -> middleware/validate.ts
   -> schemas/competitionSchema.ts
   -> controllers/competitionsController.ts
-  -> models eller services
+  -> models/MongoDB
   -> response till klienten
 
 Om något går fel:
   -> middleware/errorHandler.ts
 ```
 
-Det här är en av de viktigaste sakerna att kunna förklara. När du kan följa en request genom projektet har du förstått Express-strukturen på riktigt.
+### Kontrollkod
 
-För `GET /api/v1/competitions` ser flödet ut så här:
-
-```text
-routes/competitions-route.ts
-  -> middleware/competitionFilters.ts
-  -> schemas/competitionFiltersSchema.ts
-  -> controllers/competitionsController.ts
-  -> services/competitionFilters.ts
-  -> response till klienten
-```
-
-Det är en bra uppdelning:
-
-- middleware känner till `req`, `res`, `next`
-- schema validerar/parsar input
-- controller skickar svar
-- service gör återanvändbar logik utan Express
-
-## Nuvarande status i ditt projekt
-
-| Område | Status | Kommentar |
-| --- | --- | --- |
-| Routes | Finns | Bra uppdelat i `organizers`, `competitions`, `runners` |
-| Controllers | Finns | Följer mönstret `export const namn = async` |
-| Middleware | Finns | Auth, validering och error handler finns |
-| Error handler | Finns | Centraliserad felhantering finns |
-| Errors | Finns | `HttpError` ligger i `src/errors/httpError.ts` |
-| Services | Finns | Filtrering är flyttad till service |
-| Schemas | Finns | Request-validering ligger i `src/schemas` |
-| Types | Finns | Domäntyper och Express-augmentering finns |
-| Config | Finns | MongoDB-anslutning finns |
-| Models | Delvis | Just nu mest factory-funktioner, inte riktiga Mongoose models |
-| Database persistence | Delvis | MongoDB kopplas upp, men controllers använder fortfarande `data/store.ts` |
-
-Det du gör rätt är att du redan har separerat mycket av koden. Det du behöver öva mer på är skillnaden mellan request-schemas i `schemas/` och Mongoose-schemas som används för faktisk datalagring i MongoDB.
-
-## Snabb översikt
-
-| Vecka | Område | Status i projektet | Viktigaste kontrollen |
-| --- | --- | --- | --- |
-| 1 | Node.js och Express | Finns | Kan servern starta och svara? |
-| 2 | REST, routes och middleware | Finns | Är API:t uppdelat i resurser? |
-| 3 | TypeScript | Finns | Är request/response och domäner typade? |
-| 4 | MongoDB och Mongoose | Delvis | Servern kopplar upp sig, men controllers använder fortfarande in-memory store |
-| 5 | Relationer, filter och testning | Finns | Kan tävlingar filtreras och testas? |
-| 6 | Validering och felhantering | Finns | Går fel via `next(error)` och central error handler? |
-| 7 | Säkerhet och auth | Delvis | Auth finns, men kursmålet nämner bcrypt/JWT-bibliotek uttryckligen |
-
-## Vecka 1: Node.js, HTTP och Express
-
-### Mål
-
-Du ska kunna:
-
-- starta en Node-server
-- förstå request och response
-- använda Express
-- skapa enkla endpoints
-- förstå middleware-kedjan
-
-### Titta i projektet
-
-Öppna:
-
-- `backyard/backend/src/app.ts`
-- `backyard/backend/src/server.ts`
-- `backyard/backend/package.json`
-
-### Fråga till dig
-
-Varför exporterar vi `app` från `app.ts` och startar servern i `server.ts`?
-
-Försök svara innan du läser vidare.
-
-### Förklaring
-
-`app.ts` innehåller själva Express-appen. `server.ts` ansvarar för att starta lyssningen på en port. Det gör projektet lättare att testa, eftersom tester kan importera `app` utan att behöva starta hela servern på en fast port.
-
-### Kodexempel att skriva av
+Din `backyard/backend/src/routes/competitions-route.ts` är redan på rätt väg:
 
 ```ts
-import express from 'express';
-
-const app = express();
-
-app.use(express.json());
-
-app.get('/health', (_req, res) => {
-  return res.json({ status: 'ok' });
-});
-
-export default app;
+router.get("/", parseCompetitionFiltersHandler, listCompetitions);
+router.post("/", requireAuth, validateCompetition, createCompetitionForOrganizer);
+router.get("/:id", getCompetitionById);
+router.put("/:id", requireAuth, validateCompetition, updateCompetition);
+router.delete("/:id", requireAuth, deleteCompetition);
 ```
 
-### Varför är detta viktigt?
+Varför? Route-filen ska bara bestämma URL, HTTP-metod och vilken middleware/controller som ska köras. Den ska inte innehålla databaskod.
 
-Utan `express.json()` kan backend inte läsa JSON från request body. Då blir `req.body` tom eller `undefined`, och routes som `POST /login` fungerar inte.
+Alternativ: man kan lägga allt i route-filen i ett litet demo-projekt, men i ett kursprojekt är uppdelningen bättre eftersom du visar ansvarsfördelning.
 
-### Alternativ
+## Vecka 3: TypeScript och domäntyper
 
-Du kan lägga allt i en enda `server.ts`, men uppdelningen `app.ts` + `server.ts` är bättre när du vill testa API:t.
+### Fråga
 
-### Checklista
+Varför ska MongoDB-id ofta vara `string` i dina TypeScript-typer?
 
-- [ ] Jag kan peka ut var Express-appen skapas.
-- [ ] Jag kan förklara vad `app.use(express.json())` gör.
-- [ ] Jag kan förklara varför `app.ts` exporteras.
-- [ ] Jag kan starta backend med `npm run dev`.
+Ledtråd: vad får klienten tillbaka när ett Mongoose `_id` skickas som JSON?
 
-## Vecka 2: REST API, routes och middleware
+### Uppdatera fil
 
-### Mål
+Fil: `backyard/backend/src/types/domain.ts`
 
-Du ska kunna:
+När du går över till MongoDB bör dina publika id-typer vara `string`, inte `number`.
 
-- strukturera routes
-- använda REST-resurser
-- förstå HTTP-metoder
-- använda middleware i rätt ordning
-- bygga versionerade API-routes
-
-### Titta i projektet
-
-Öppna:
-
-- `backyard/backend/src/app.ts`
-- `backyard/backend/src/routes/competitions-route.ts`
-- `backyard/backend/src/routes/organizers-route.ts`
-- `backyard/backend/src/routes/runners-route.ts`
-
-### Fråga till dig
-
-Vilken resurs representerar den här endpointen?
-
-```text
-POST /api/v1/competitions/:competitionId/runners/me
-```
-
-Ledtråd: den handlar både om en tävling och den inloggade löparen.
-
-### Förklaring
-
-Endpointen skapar en anmälan för den inloggade löparen till en specifik tävling. Det är rimligt att den ligger under `competitions`, eftersom anmälan sker till just en tävling.
-
-### Kodexempel att skriva av
+Skriv om centrala typer ungefär så här:
 
 ```ts
-import { Router } from 'express';
-import { requireRunnerAuth } from '../middleware/auth';
-import { registerCurrentRunnerForCompetition } from '../controllers/runnersController';
+export type Organizer = {
+  id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  createdAt: string;
+  updatedAt: string;
+};
 
-const router = Router();
+export type PublicOrganizer = Omit<Organizer, "passwordHash">;
 
-router.post(
-  '/:competitionId/runners/me',
-  requireRunnerAuth,
-  registerCurrentRunnerForCompetition,
-);
+export type RunnerAccount = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  passwordHash: string;
+  club: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
 
-export default router;
-```
+export type PublicRunnerAccount = Omit<RunnerAccount, "passwordHash">;
 
-### Varför är detta viktigt?
-
-Routes ska läsa som API:ets språk. Om allt hamnar i en enda fil eller får otydliga namn blir det svårt att veta var ny funktionalitet ska läggas.
-
-### Alternativ
-
-Du hade också kunnat skapa en separat resurs:
-
-```text
-POST /api/v1/registrations
-```
-
-Det är också en bra lösning. Den blir extra tydlig om anmälningar får mycket egen logik senare.
-
-### Workshop-övning
-
-Skriv med egna ord vad varje route gör:
-
-```text
-GET    /api/v1/competitions
-POST   /api/v1/competitions
-GET    /api/v1/competitions/:id
-PUT    /api/v1/competitions/:id
-DELETE /api/v1/competitions/:id
-```
-
-### Checklista
-
-- [ ] API:t använder `/api/v1`.
-- [ ] Routes är uppdelade efter resurs.
-- [ ] `GET`, `POST`, `PUT` och `DELETE` används rimligt.
-- [ ] Middleware ligger före controller i routes.
-- [ ] Jag kan förklara skillnaden mellan route och controller.
-
-## Vecka 3: TypeScript i Express
-
-### Mål
-
-Du ska kunna:
-
-- använda TypeScript i Node
-- skapa egna typer
-- typa Express `Request`, `Response` och `NextFunction`
-- förstå varför `unknown` är säkrare än `any`
-- bygga kod med `tsc`
-
-### Titta i projektet
-
-Öppna:
-
-- `backyard/backend/src/types/domain.ts`
-- `backyard/backend/src/types/express.d.ts`
-- `backyard/backend/src/controllers/competitionsController.ts`
-- `backyard/backend/tsconfig.json`
-
-### Fråga till dig
-
-Varför är detta bättre än att låta allt vara `any`?
-
-```ts
-type Competition = {
-  id: number;
-  organizerId: number;
+export type Competition = {
+  id: string;
+  organizerId: string;
   name: string;
   type: string;
   place: string;
   startAt: string;
   endAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RunnerStatus = "registered";
+
+export type Runner = {
+  id: string;
+  competitionId: string;
+  runnerAccountId: string | null;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  club: string | null;
+  status: RunnerStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AuthRole = "organizer" | "runner";
+
+export type TokenPayload = {
+  sub: string;
+  email: string;
+  role: AuthRole;
+  exp: number;
 };
 ```
 
-### Förklaring
+Varför? Om TypeScript fortfarande tror att `id` är `number`, men MongoDB skickar strängar, får du fel längre fram i controllers och auth.
 
-TypeScript hjälper dig upptäcka fel innan servern körs. Om du råkar skriva `competition.plase` i stället för `competition.place` får du ett fel direkt.
-
-### JavaScript jämfört med TypeScript
-
-```js
-const createCompetition = (input) => {
-  return {
-    name: input.name,
-    place: input.place,
-  };
-};
-```
-
-```ts
-type CreateCompetitionInput = {
-  name: string;
-  place: string;
-};
-
-export const createCompetition = (input: CreateCompetitionInput) => {
-  return {
-    name: input.name,
-    place: input.place,
-  };
-};
-```
-
-### Kodexempel att skriva av
-
-```ts
-import type { Request, Response, NextFunction } from 'express';
-
-export const listCompetitions = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    return res.json([]);
-  } catch (error) {
-    return next(error);
-  }
-};
-```
-
-### Varför är detta viktigt?
-
-När controllers är typade blir det tydligare vad Express skickar in och vad funktionen ska göra vid fel. Det hjälper också när projektet växer.
-
-### Alternativ
-
-Du kan typa request body ännu hårdare med generics i Express, men i ett kursprojekt räcker det ofta att validera body först och lägga resultatet i `req.validatedBody`.
-
-### Checklista
-
-- [ ] Projektet har `tsconfig.json`.
-- [ ] Backend byggs med `npm run build`.
-- [ ] Domäntyper finns i `types/domain.ts`.
-- [ ] Express request är utökad i `types/express.d.ts`.
-- [ ] Controllers använder `export const namn = async`.
+Alternativ: du kan låta Mongoose jobba med `Types.ObjectId` internt och konvertera till `string` när du skickar JSON. Det är ofta bästa lösningen.
 
 ## Vecka 4: MongoDB och Mongoose
 
-### Mål
+Det här är den största praktiska uppdateringen.
 
-Du ska kunna:
+### Fråga
 
-- koppla backend till MongoDB
-- förstå collections och documents
-- skapa Mongoose schemas och models
-- använda miljövariabel för `MONGO_URI`
-- förstå skillnaden mellan in-memory data och databasdata
+Vad är skillnaden mellan de här två filtyperna?
 
-### Titta i projektet
+```text
+schemas/competitionSchema.ts
+models/competition.model.ts
+```
 
-Öppna:
+Svar:
 
-- `backyard/backend/src/config/database.ts`
-- `backyard/backend/src/data/store.ts`
-- `backyard/backend/src/models/competition.model.ts`
+- `schemas/competitionSchema.ts` validerar data från klienten.
+- `models/competition.model.ts` beskriver hur data sparas i MongoDB.
 
-### Viktig status
+Du har förstått något viktigt om du kan hålla isär de två.
 
-Projektet har MongoDB-uppkoppling, men flera controllers använder fortfarande arrays från `data/store.ts`.
+### Uppdatera Competition model
 
-Det betyder:
+Fil: `backyard/backend/src/models/competition.model.ts`
 
-- servern kan koppla till MongoDB
-- men tävlingar, arrangörer och löpare sparas inte fullt ut i MongoDB ännu
-- data försvinner när servern startas om, om den bara ligger i arrays
-
-Det här är en jättebra sak att upptäcka själv. Det visar att du inte bara tittar efter om en fil finns, utan om funktionen faktiskt används.
-
-### Fråga till dig
-
-Om `createCompetitionForOrganizer` gör `competitions.push(competition)`, var sparas tävlingen då?
-
-Svar: i minnet, inte i MongoDB.
-
-### Kodexempel: Mongoose schema
+Ersätt factory-funktionen med en riktig Mongoose model:
 
 ```ts
-import { Schema, model } from 'mongoose';
+import {
+  Schema,
+  model,
+  type HydratedDocument,
+  type InferSchemaType,
+} from "mongoose";
 
 const competitionSchema = new Schema(
   {
-    organizerId: { type: Schema.Types.ObjectId, ref: 'Organizer', required: true },
-    name: { type: String, required: true },
-    type: { type: String, required: true },
-    place: { type: String, required: true },
+    organizerId: {
+      type: Schema.Types.ObjectId,
+      ref: "Organizer",
+      required: true,
+    },
+    name: { type: String, required: true, trim: true },
+    type: { type: String, required: true, trim: true },
+    place: { type: String, required: true, trim: true },
     startAt: { type: Date, required: true },
     endAt: { type: Date, required: true },
   },
   { timestamps: true },
 );
 
-export const CompetitionModel = model('Competition', competitionSchema);
+export type CompetitionFields = InferSchemaType<typeof competitionSchema>;
+export type CompetitionDocument = HydratedDocument<CompetitionFields>;
+
+export const CompetitionModel = model("Competition", competitionSchema);
+
+export const toCompetitionResponse = (competition: CompetitionDocument) => {
+  return {
+    id: competition.id,
+    organizerId: competition.organizerId.toString(),
+    name: competition.name,
+    type: competition.type,
+    place: competition.place,
+    startAt: competition.startAt.toISOString(),
+    endAt: competition.endAt.toISOString(),
+    createdAt: competition.createdAt.toISOString(),
+    updatedAt: competition.updatedAt.toISOString(),
+  };
+};
 ```
 
-### Kodexempel: controller med databas
+Varför? Mongoose behöver `Schema` och `model` för att veta vilken collection som ska användas och vilka fält som krävs.
+
+### Uppdatera Organizer model
+
+Fil: `backyard/backend/src/models/organizer.model.ts`
 
 ```ts
+import {
+  Schema,
+  model,
+  type HydratedDocument,
+  type InferSchemaType,
+} from "mongoose";
+
+const organizerSchema = new Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    passwordHash: { type: String, required: true },
+  },
+  { timestamps: true },
+);
+
+export type OrganizerFields = InferSchemaType<typeof organizerSchema>;
+export type OrganizerDocument = HydratedDocument<OrganizerFields>;
+
+export const OrganizerModel = model("Organizer", organizerSchema);
+
+export const toPublicOrganizer = (organizer: OrganizerDocument) => {
+  return {
+    id: organizer.id,
+    name: organizer.name,
+    email: organizer.email,
+    createdAt: organizer.createdAt.toISOString(),
+    updatedAt: organizer.updatedAt.toISOString(),
+  };
+};
+```
+
+### Uppdatera RunnerAccount model
+
+Fil: `backyard/backend/src/models/runnerAccount.model.ts`
+
+```ts
+import {
+  Schema,
+  model,
+  type HydratedDocument,
+  type InferSchemaType,
+} from "mongoose";
+
+const runnerAccountSchema = new Schema(
+  {
+    firstName: { type: String, required: true, trim: true },
+    lastName: { type: String, required: true, trim: true },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    passwordHash: { type: String, required: true },
+    club: { type: String, default: null, trim: true },
+  },
+  { timestamps: true },
+);
+
+export type RunnerAccountFields = InferSchemaType<typeof runnerAccountSchema>;
+export type RunnerAccountDocument = HydratedDocument<RunnerAccountFields>;
+
+export const RunnerAccountModel = model("RunnerAccount", runnerAccountSchema);
+
+export const toPublicRunnerAccount = (runnerAccount: RunnerAccountDocument) => {
+  return {
+    id: runnerAccount.id,
+    firstName: runnerAccount.firstName,
+    lastName: runnerAccount.lastName,
+    email: runnerAccount.email,
+    club: runnerAccount.club,
+    createdAt: runnerAccount.createdAt.toISOString(),
+    updatedAt: runnerAccount.updatedAt.toISOString(),
+  };
+};
+```
+
+### Uppdatera Runner model
+
+Fil: `backyard/backend/src/models/runner.model.ts`
+
+```ts
+import {
+  Schema,
+  model,
+  type HydratedDocument,
+  type InferSchemaType,
+} from "mongoose";
+
+const runnerSchema = new Schema(
+  {
+    competitionId: {
+      type: Schema.Types.ObjectId,
+      ref: "Competition",
+      required: true,
+    },
+    runnerAccountId: {
+      type: Schema.Types.ObjectId,
+      ref: "RunnerAccount",
+      default: null,
+    },
+    firstName: { type: String, required: true, trim: true },
+    lastName: { type: String, required: true, trim: true },
+    email: { type: String, default: null, lowercase: true, trim: true },
+    club: { type: String, default: null, trim: true },
+    status: {
+      type: String,
+      enum: ["registered"],
+      default: "registered",
+    },
+  },
+  { timestamps: true },
+);
+
+export type RunnerFields = InferSchemaType<typeof runnerSchema>;
+export type RunnerDocument = HydratedDocument<RunnerFields>;
+
+export const RunnerModel = model("Runner", runnerSchema);
+
+export const toRunnerResponse = (runner: RunnerDocument) => {
+  return {
+    id: runner.id,
+    competitionId: runner.competitionId.toString(),
+    runnerAccountId: runner.runnerAccountId?.toString() ?? null,
+    firstName: runner.firstName,
+    lastName: runner.lastName,
+    email: runner.email,
+    club: runner.club,
+    status: runner.status,
+    createdAt: runner.createdAt.toISOString(),
+    updatedAt: runner.updatedAt.toISOString(),
+  };
+};
+```
+
+Varför? Relationer i MongoDB sparas ofta som ObjectId-referenser. Det gör att en tävling kan kopplas till en arrangör och en anmälan kan kopplas till en tävling.
+
+Alternativ: du kan använda ren MongoDB driver utan Mongoose. Det är också en bra lösning, men Mongoose passar kursmålet bättre eftersom du tränar på schemas och models.
+
+## Vecka 4 fortsättning: controllers ska använda MongoDB
+
+### Uppdatera competitionsController
+
+Fil: `backyard/backend/src/controllers/competitionsController.ts`
+
+Målet är att ta bort beroendet till `competitions` arrayen och använda `CompetitionModel`.
+
+Skriv först hjälpfunktioner:
+
+```ts
+import type { NextFunction, Request, Response } from "express";
+import { Types, type FilterQuery } from "mongoose";
+
+import {
+  CompetitionModel,
+  type CompetitionFields,
+  toCompetitionResponse,
+} from "../models/competition.model";
+import { RunnerModel } from "../models/runner.model";
+import type { ValidatedCompetitionBody } from "../schemas/competitionSchema";
+import type { CompetitionFilters } from "../schemas/competitionFiltersSchema";
+import HttpError from "../errors/httpError";
+
+const toDate = (value: string) => new Date(value);
+
+const getCompetitionOrThrow = async (id: string) => {
+  if (!Types.ObjectId.isValid(id)) {
+    throw new HttpError(404, "COMPETITION_NOT_FOUND", "Tävlingen finns inte");
+  }
+
+  const competition = await CompetitionModel.findById(id);
+
+  if (!competition) {
+    throw new HttpError(404, "COMPETITION_NOT_FOUND", "Tävlingen finns inte");
+  }
+
+  return competition;
+};
+
+const requireCompetitionOwner = (organizerId: string, currentOrganizerId: string) => {
+  if (organizerId !== currentOrganizerId) {
+    throw new HttpError(403, "FORBIDDEN", "Du kan bara ändra dina egna tävlingar");
+  }
+};
+
+const buildCompetitionQuery = (
+  filters: CompetitionFilters,
+): FilterQuery<CompetitionFields> => {
+  const query: FilterQuery<CompetitionFields> = {};
+
+  if (filters.organizerId) {
+    query.organizerId = new Types.ObjectId(filters.organizerId);
+  }
+
+  if (filters.type) {
+    query.type = new RegExp(filters.type, "i");
+  }
+
+  if (filters.place) {
+    query.place = new RegExp(filters.place, "i");
+  }
+
+  if (filters.startsAfter) {
+    query.startAt = { ...(query.startAt ?? {}), $gte: new Date(filters.startsAfter) };
+  }
+
+  if (filters.endsBefore) {
+    query.endAt = { ...(query.endAt ?? {}), $lte: new Date(filters.endsBefore) };
+  }
+
+  if (filters.date) {
+    const startOfDay = new Date(`${filters.date}T00:00:00.000Z`);
+    const endOfDay = new Date(`${filters.date}T23:59:59.999Z`);
+    query.startAt = { ...(query.startAt ?? {}), $lte: endOfDay };
+    query.endAt = { ...(query.endAt ?? {}), $gte: startOfDay };
+  }
+
+  return query;
+};
+```
+
+Fråga till dig: varför bygger vi en `query` i stället för att först hämta alla tävlingar och sedan filtrera i JavaScript?
+
+Svar: databasen är bättre på att filtrera stora mängder data. Vid mycket trafik blir det billigare och snabbare.
+
+Skriv sedan controller-funktionerna:
+
+```ts
+export const listCompetitions = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!req.competitionFilters) {
+      throw new HttpError(500, "FILTERS_NOT_PARSED", "Tävlingsfilter saknas");
+    }
+
+    const competitions = await CompetitionModel.find(
+      buildCompetitionQuery(req.competitionFilters),
+    ).sort({ startAt: 1 });
+
+    return res.json(competitions.map(toCompetitionResponse));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getCompetitionById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const competition = await getCompetitionOrThrow(req.params.id);
+    const runnersCount = await RunnerModel.countDocuments({
+      competitionId: competition._id,
+    });
+
+    return res.json({
+      ...toCompetitionResponse(competition),
+      runnersCount,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const createCompetitionForOrganizer = async (
   req: Request,
   res: Response,
@@ -478,204 +604,500 @@ export const createCompetitionForOrganizer = async (
 ) => {
   try {
     if (!req.organizer) {
-      throw new HttpError(401, 'UNAUTHORIZED', 'Du måste vara inloggad');
+      throw new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som arrangör");
     }
+
+    const validatedBody = req.validatedBody as ValidatedCompetitionBody;
 
     const competition = await CompetitionModel.create({
-      ...req.validatedBody,
       organizerId: req.organizer.id,
+      name: validatedBody.name,
+      type: validatedBody.type,
+      place: validatedBody.place,
+      startAt: toDate(validatedBody.startAt),
+      endAt: toDate(validatedBody.endAt),
     });
 
-    return res.status(201).json(competition);
+    return res.status(201).json(toCompetitionResponse(competition));
   } catch (error) {
     return next(error);
   }
 };
-```
 
-### Varför är detta viktigt?
-
-Databasen gör att data finns kvar efter omstart. In-memory arrays är bra för att lära sig routes snabbt, men räcker inte som riktig backend.
-
-### Alternativ
-
-Du kan börja med in-memory store när du lär dig Express. Det är okej pedagogiskt. Men för kursmålet om databaser behöver controllers faktiskt läsa och skriva via Mongoose.
-
-### Checklista
-
-- [ ] `MONGO_URI` läses från `.env`.
-- [ ] Servern kopplar upp sig till MongoDB vid start.
-- [ ] Det finns Mongoose schemas.
-- [ ] Controllers använder Mongoose models, inte bara arrays.
-- [ ] Jag kan förklara varför in-memory data försvinner vid omstart.
-
-## Vecka 5: Relationer, filtrering och testning
-
-### Mål
-
-Du ska kunna:
-
-- modellera relationer mellan resurser
-- filtrera med query params
-- förstå `params`, `query` och `body`
-- skriva API-tester
-- testa både lyckade och felaktiga flöden
-
-### Titta i projektet
-
-Öppna:
-
-- `backyard/backend/src/services/competitionFilters.ts`
-- `backyard/backend/src/middleware/competitionFilters.ts`
-- `backyard/backend/src/schemas/competitionFiltersSchema.ts`
-- `backyard/backend/src/__tests__/app.test.ts`
-- `backyard/backend/src/controllers/runnersController.ts`
-
-### Fråga till dig
-
-Vilken typ av data kommer från varje plats?
-
-```text
-req.params
-req.query
-req.body
-```
-
-Försök svara innan du läser:
-
-- `params`: id i URL, till exempel `:competitionId`
-- `query`: filter efter `?type=backyard`
-- `body`: JSON-data från klienten
-
-### Kodexempel: middleware-handler för query
-
-```ts
-export const parseCompetitionFiltersHandler = async (req, res, next) => {
+export const updateCompetition = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
-    req.competitionFilters = parseCompetitionFilters(req.query);
-    return next();
-  } catch (error) {
-    return next(error);
-  }
-};
-```
-
-### Kodexempel: service för filtrering
-
-```ts
-export const filterCompetitions = (competitions, filters) => {
-  return competitions.filter((competition) => {
-    if (filters.type && !competition.type.toLowerCase().includes(filters.type)) {
-      return false;
+    if (!req.organizer) {
+      throw new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som arrangör");
     }
 
-    return true;
-  });
+    const competition = await getCompetitionOrThrow(req.params.id);
+    requireCompetitionOwner(competition.organizerId.toString(), req.organizer.id);
+
+    const validatedBody = req.validatedBody as ValidatedCompetitionBody;
+
+    competition.name = validatedBody.name;
+    competition.type = validatedBody.type;
+    competition.place = validatedBody.place;
+    competition.startAt = toDate(validatedBody.startAt);
+    competition.endAt = toDate(validatedBody.endAt);
+
+    await competition.save();
+
+    return res.json(toCompetitionResponse(competition));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const deleteCompetition = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!req.organizer) {
+      throw new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som arrangör");
+    }
+
+    const competition = await getCompetitionOrThrow(req.params.id);
+    requireCompetitionOwner(competition.organizerId.toString(), req.organizer.id);
+
+    await RunnerModel.deleteMany({ competitionId: competition._id });
+    await competition.deleteOne();
+
+    return res.status(204).send();
+  } catch (error) {
+    return next(error);
+  }
 };
 ```
 
-Fråga till dig: varför ska `filterCompetitions` inte använda `req.query` direkt?
+Varför? Nu sparas, hämtas, uppdateras och tas tävlingar bort i MongoDB. Annars hade API:t sett rätt ut men tappat data vid omstart.
 
-Svar: för att en service ska kunna återanvändas även utanför Express, till exempel i tester eller senare i annan backendlogik.
+## Vecka 5: relationer, filter och tester
 
-### Kodexempel: test
+### Uppdatera query-schema
+
+Fil: `backyard/backend/src/schemas/competitionFiltersSchema.ts`
+
+När `organizerId` blir MongoDB-id ska det vara en sträng och valideras som ObjectId.
 
 ```ts
-it('can filter competitions by place', async () => {
-  const response = await request('/api/v1/competitions?place=ume');
+import { Types } from "mongoose";
+import HttpError from "../errors/httpError";
 
-  assert.equal(response.status, 200);
+export type CompetitionFilters = {
+  organizerId: string | null;
+  type: string | null;
+  place: string | null;
+  date: string | null;
+  startsAfter: string | null;
+  endsBefore: string | null;
+};
 
-  const body = await response.json();
-  assert.equal(body[0].place, 'Umeå');
+const toSingleString = (value: unknown): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  if (Array.isArray(value)) {
+    return value[0] ? String(value[0]) : null;
+  }
+
+  return String(value);
+};
+
+const parseOrganizerId = (value: unknown): string | null => {
+  const organizerId = toSingleString(value);
+
+  if (!organizerId) {
+    return null;
+  }
+
+  if (!Types.ObjectId.isValid(organizerId)) {
+    throw new HttpError(400, "BAD_REQUEST", "organizerId måste vara ett giltigt MongoDB-id");
+  }
+
+  return organizerId;
+};
+```
+
+Behåll resten av filens datum- och textvalidering.
+
+### Fråga
+
+Varför ska filtrering med MongoDB ligga i controller eller service, inte i route-filen?
+
+Svar: route-filen ska bara koppla ihop URL och funktioner. Databaslogik hör hemma i controller/service.
+
+### Testa mot MongoDB
+
+Fil: `backyard/backend/src/__tests__/app.test.ts`
+
+När controllers använder Mongoose behöver testerna koppla upp sig mot en testdatabas. Ett bra sätt är `mongodb-memory-server`.
+
+Lägg till ungefär detta högst upp i testfilen:
+
+```ts
+import mongoose from "mongoose";
+import { MongoMemoryServer } from "mongodb-memory-server";
+
+import { OrganizerModel } from "../models/organizer.model";
+import { CompetitionModel } from "../models/competition.model";
+import { RunnerModel } from "../models/runner.model";
+import { RunnerAccountModel } from "../models/runnerAccount.model";
+import { hashPassword } from "../utils/security";
+
+let mongoServer: MongoMemoryServer;
+```
+
+Uppdatera `before` och `after`:
+
+```ts
+before(async () => {
+  process.env.AUTH_SECRET = "test-secret";
+
+  mongoServer = await MongoMemoryServer.create();
+  await mongoose.connect(mongoServer.getUri());
+
+  const organizer = await OrganizerModel.create({
+    name: "Backyard Ultra Sverige",
+    email: "arrangor@example.com",
+    passwordHash: await hashPassword("password123"),
+  });
+
+  await CompetitionModel.create({
+    organizerId: organizer._id,
+    name: "Skogsgläntans Backyard Ultra",
+    type: "Backyard Ultra",
+    place: "Umeå",
+    startAt: new Date("2026-06-13T10:00:00.000Z"),
+    endAt: new Date("2026-06-14T18:00:00.000Z"),
+  });
+
+  server = await new Promise((resolve, reject) => {
+    const testServer = app.listen(0, "127.0.0.1");
+    testServer.once("listening", () => resolve(testServer));
+    testServer.once("error", reject);
+  });
+
+  const address = server.address();
+
+  if (!address || typeof address === "string") {
+    throw new Error("Testservern startade utan port");
+  }
+
+  baseUrl = `http://localhost:${address.port}`;
+});
+
+after(async () => {
+  server.close();
+  await OrganizerModel.deleteMany({});
+  await CompetitionModel.deleteMany({});
+  await RunnerModel.deleteMany({});
+  await RunnerAccountModel.deleteMany({});
+  await mongoose.disconnect();
+  await mongoServer.stop();
 });
 ```
 
-### Varför är detta viktigt?
+Varför? Tester ska kunna köras om och om igen utan att förstöra din riktiga databas.
 
-Filtrering gör API:t användbart för frontend. Tester gör att du vågar ändra kod utan att råka förstöra gamla flöden.
+Alternativ: du kan använda en separat MongoDB-testdatabas via `.env.test`, men `mongodb-memory-server` är smidigare för automatiska tester.
 
-### Alternativ
+## Vecka 6: validering och felhantering
 
-Du kan testa med Postman eller Thunder Client manuellt. Det är bra för att förstå API:t, men automatiska tester är bättre när du vill upptäcka fel snabbt.
-
-### Workshop-övning
-
-Lägg till ett test för en filtrering som ska ge tom lista:
-
-```text
-GET /api/v1/competitions?place=malmo
-```
-
-Förväntat:
-
-```ts
-assert.equal(body.length, 0);
-```
-
-### Checklista
-
-- [ ] Tävlingar har relation till arrangör.
-- [ ] Löpare/anmälda har relation till tävling.
-- [ ] API:t kan filtrera på datum.
-- [ ] API:t kan filtrera på typ.
-- [ ] API:t kan filtrera på arrangör.
-- [ ] API:t kan filtrera på plats.
-- [ ] Det finns tester för viktiga flöden.
-
-## Vecka 6: Validering och felhantering
-
-### Mål
-
-Du ska kunna:
-
-- validera `body`, `params` och `query`
-- förstå "Don't trust the client"
-- använda valideringsmiddleware
-- skilja på validering i appen och i databasen
-- skicka fel till central error handler
-- returnera konsekvent felformat
-
-### Titta i projektet
-
-Öppna:
-
-- `backyard/backend/src/middleware/validate.ts`
-- `backyard/backend/src/schemas/competitionSchema.ts`
-- `backyard/backend/src/schemas/organizerSchema.ts`
-- `backyard/backend/src/schemas/runnerSchema.ts`
-- `backyard/backend/src/middleware/errorHandler.ts`
-- `backyard/backend/src/errors/httpError.ts`
-
-### Fråga till dig
+### Fråga
 
 Varför ska valideringen ligga före controllern?
 
 Ledtråd: vad händer om controllern antar att `startAt` finns, men klienten inte skickar det?
 
-### Förklaring
+### Status i ditt projekt
 
-Validering före controller gör att controllern kan fokusera på affärslogik. Om data saknas eller är fel stoppas requesten tidigt med ett tydligt `400 Bad Request`.
+Det här är redan bra:
 
-### Kodexempel att skriva av
+- `middleware/validate.ts` kör parsern före controller.
+- `schemas/competitionSchema.ts` validerar request body.
+- `errors/httpError.ts` ger egna HTTP-fel.
+- `middleware/errorHandler.ts` ger samma felformat överallt.
+
+### Kontrollkod
+
+Fil: `backyard/backend/src/middleware/validate.ts`
+
+Den här idén ska vara kvar:
 
 ```ts
-export const validateCompetition = async (
+type BodyParser = (body: unknown) => unknown;
+
+const validateBody = (parser: BodyParser) => {
+  return async (req: Request, _res: Response, next: NextFunction) => {
+    try {
+      req.validatedBody = parser(req.body);
+      return next();
+    } catch (error) {
+      return next(error);
+    }
+  };
+};
+
+export const validateCompetition = validateBody(parseCompetition);
+```
+
+Varför? Controllern slipper kontrollera varje fält själv. Den kan lita på `req.validatedBody`.
+
+Alternativ: Zod eller Joi är också bra lösningar. Manuell validering är däremot bra träning, eftersom du ser exakt vad som händer.
+
+## Vecka 7: säkerhet, bcrypt och JWT
+
+### Fråga
+
+Vad är skillnaden mellan att hasha ett lösenord och att kryptera ett lösenord?
+
+Svar: hashning är enkelriktad. Du ska inte kunna få tillbaka original-lösenordet.
+
+### Uppdatera security.ts
+
+Fil: `backyard/backend/src/utils/security.ts`
+
+Ersätt egen token- och lösenordskod med `bcrypt` och `jsonwebtoken`:
+
+```ts
+import bcrypt from "bcrypt";
+import jwt, { type JwtPayload } from "jsonwebtoken";
+
+import type { AuthRole, TokenPayload } from "../types/domain";
+
+type TokenUser = {
+  id: string;
+  email: string;
+};
+
+const TOKEN_TTL = "2h";
+
+const getAuthSecret = () => {
+  const secret = process.env.AUTH_SECRET;
+
+  if (!secret) {
+    throw new Error("AUTH_SECRET saknas i miljövariablerna");
+  }
+
+  return secret;
+};
+
+export const hashPassword = async (password: string): Promise<string> => {
+  return bcrypt.hash(password, 12);
+};
+
+export const verifyPassword = async (
+  password: string,
+  storedPassword: string,
+): Promise<boolean> => {
+  return bcrypt.compare(password, storedPassword);
+};
+
+export const createToken = (user: TokenUser, role: AuthRole): string => {
+  return jwt.sign(
+    {
+      sub: user.id,
+      email: user.email,
+      role,
+    },
+    getAuthSecret(),
+    { expiresIn: TOKEN_TTL },
+  );
+};
+
+export const verifyToken = (token: string): TokenPayload | null => {
+  try {
+    const payload = jwt.verify(token, getAuthSecret());
+
+    if (typeof payload === "string") {
+      return null;
+    }
+
+    const jwtPayload = payload as JwtPayload & {
+      sub?: string;
+      email?: string;
+      role?: AuthRole;
+    };
+
+    if (!jwtPayload.sub || !jwtPayload.email || !jwtPayload.role || !jwtPayload.exp) {
+      return null;
+    }
+
+    return {
+      sub: jwtPayload.sub,
+      email: jwtPayload.email,
+      role: jwtPayload.role,
+      exp: jwtPayload.exp,
+    };
+  } catch {
+    return null;
+  }
+};
+```
+
+Viktigt: eftersom `hashPassword` och `verifyPassword` nu är async måste du använda `await` i controllers.
+
+### Uppdatera organizersController
+
+Fil: `backyard/backend/src/controllers/organizersController.ts`
+
+Byt från `organizers` array till `OrganizerModel`.
+
+```ts
+import type { NextFunction, Request, Response } from "express";
+
+import {
+  OrganizerModel,
+  toPublicOrganizer,
+} from "../models/organizer.model";
+import type {
+  LoginBody,
+  OrganizerRegistrationBody,
+} from "../schemas/organizerSchema";
+import HttpError from "../errors/httpError";
+import { createToken, hashPassword, verifyPassword } from "../utils/security";
+
+export const registerOrganizer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { name, email, password } = req.validatedBody as OrganizerRegistrationBody;
+    const existingOrganizer = await OrganizerModel.findOne({ email });
+
+    if (existingOrganizer) {
+      throw new HttpError(409, "EMAIL_ALREADY_EXISTS", "En arrangör med den e-posten finns redan");
+    }
+
+    const organizer = await OrganizerModel.create({
+      name,
+      email,
+      passwordHash: await hashPassword(password),
+    });
+
+    return res.status(201).json({
+      organizer: toPublicOrganizer(organizer),
+      token: createToken({ id: organizer.id, email: organizer.email }, "organizer"),
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const loginOrganizer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { email, password } = req.validatedBody as LoginBody;
+    const organizer = await OrganizerModel.findOne({ email });
+
+    if (!organizer || !(await verifyPassword(password, organizer.passwordHash))) {
+      throw new HttpError(401, "INVALID_CREDENTIALS", "Fel email eller lösenord");
+    }
+
+    return res.json({
+      organizer: toPublicOrganizer(organizer),
+      token: createToken({ id: organizer.id, email: organizer.email }, "organizer"),
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getCurrentOrganizer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (!req.organizer) {
+    return next(new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som arrangör"));
+  }
+
+  return res.json({ organizer: req.organizer });
+};
+```
+
+### Uppdatera auth middleware
+
+Fil: `backyard/backend/src/middleware/auth.ts`
+
+Byt från arrays till MongoDB:
+
+```ts
+import type { NextFunction, Request, Response } from "express";
+
+import { OrganizerModel, toPublicOrganizer } from "../models/organizer.model";
+import { RunnerAccountModel, toPublicRunnerAccount } from "../models/runnerAccount.model";
+import HttpError from "../errors/httpError";
+import { verifyToken } from "../utils/security";
+
+const getBearerToken = (req: Request) => {
+  const header = req.headers.authorization;
+
+  if (!header || !header.startsWith("Bearer ")) {
+    return null;
+  }
+
+  return header.replace("Bearer ", "");
+};
+
+export const requireAuth = async (
   req: Request,
   _res: Response,
   next: NextFunction,
 ) => {
   try {
-    const body = req.body as Record<string, unknown>;
+    const token = getBearerToken(req);
+    const payload = token ? verifyToken(token) : null;
 
-    if (typeof body.name !== 'string' || body.name.trim() === '') {
-      throw new HttpError(400, 'BAD_REQUEST', 'tävlingsnamn krävs');
+    if (!payload || payload.role !== "organizer") {
+      throw new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som arrangör");
     }
 
-    req.validatedBody = {
-      name: body.name.trim(),
-    };
+    const organizer = await OrganizerModel.findById(payload.sub);
 
+    if (!organizer) {
+      throw new HttpError(401, "UNAUTHORIZED", "Arrangören finns inte längre");
+    }
+
+    req.organizer = toPublicOrganizer(organizer);
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const requireRunnerAuth = async (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const token = getBearerToken(req);
+    const payload = token ? verifyToken(token) : null;
+
+    if (!payload || payload.role !== "runner") {
+      throw new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som löpare");
+    }
+
+    const runnerAccount = await RunnerAccountModel.findById(payload.sub);
+
+    if (!runnerAccount) {
+      throw new HttpError(401, "UNAUTHORIZED", "Löparkontot finns inte längre");
+    }
+
+    req.runnerAccount = toPublicRunnerAccount(runnerAccount);
     return next();
   } catch (error) {
     return next(error);
@@ -683,272 +1105,79 @@ export const validateCompetition = async (
 };
 ```
 
-### Central felhantering
+Varför? Token säger vem användaren är, men databasen bekräftar att användaren fortfarande finns.
+
+Alternativ: du kan använda sessions/cookies i stället för JWT. JWT är vanligt för API:er och matchar kursmålet bra.
+
+## Kontrollera Express-typer
+
+Fil: `backyard/backend/src/types/express.d.ts`
+
+När `req.organizer` och `req.runnerAccount` blir publika objekt från MongoDB ska typen passa:
 
 ```ts
-export const errorHandler = async (
-  error: Error,
-  _req: Request,
-  res: Response,
-  _next: NextFunction,
-) => {
-  if (error instanceof HttpError) {
-    return res.status(error.status).json({
-      error: {
-        code: error.code,
-        message: error.message,
-        status: error.status,
-      },
-    });
+import type { PublicOrganizer, PublicRunnerAccount } from "./domain";
+import type { CompetitionFilters } from "../schemas/competitionFiltersSchema";
+
+declare global {
+  namespace Express {
+    interface Request {
+      organizer?: PublicOrganizer;
+      runnerAccount?: PublicRunnerAccount;
+      validatedBody?: unknown;
+      competitionFilters?: CompetitionFilters;
+    }
   }
+}
 
-  return res.status(500).json({
-    error: {
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Något gick fel',
-      status: 500,
-    },
-  });
-};
+export {};
 ```
 
-### Varför är detta viktigt?
+Varför? Middleware lägger in användaren på `req`. TypeScript behöver veta att de fälten finns.
 
-Utan central felhantering får du lätt olika felformat i olika routes. Det gör frontend svårare att bygga och felsökning rörigare.
+## Checklista för att du ska vara klar
 
-### Alternativ
+Markera bara när du både har kod och kan förklara varför.
 
-Du kan använda Zod för schemas. Det är ofta en bättre lösning när valideringen växer, men manuell validering är bra för att förstå grunden.
+- [ ] Jag kan förklara skillnaden mellan `app.ts` och `server.ts`.
+- [ ] Alla API-routes ligger under `/api/v1`.
+- [ ] Routes väljer middleware/controller, men innehåller inte databaskod.
+- [ ] `id`, `organizerId`, `competitionId` och `runnerAccountId` är anpassade till MongoDB-id.
+- [ ] `competition.model.ts` exporterar `CompetitionModel`.
+- [ ] `organizer.model.ts` exporterar `OrganizerModel`.
+- [ ] `runner.model.ts` exporterar `RunnerModel`.
+- [ ] `runnerAccount.model.ts` exporterar `RunnerAccountModel`.
+- [ ] `competitionsController.ts` använder MongoDB i stället för `competitions.push(...)`.
+- [ ] `organizersController.ts` använder MongoDB i stället för `organizers.find(...)`.
+- [ ] `auth.ts` hämtar användare från MongoDB efter att token verifierats.
+- [ ] Lösenord hash:as med `bcrypt`.
+- [ ] Token skapas och verifieras med `jsonwebtoken`.
+- [ ] Tester kör mot en testdatabas.
+- [ ] Fel går via `next(error)` och central `errorHandler`.
 
-### Checklista
+## Kör kontroller
 
-- [ ] `POST /competitions` validerar body.
-- [ ] Login validerar email och password.
-- [ ] Fel skickas med `next(error)`.
-- [ ] Det finns en `HttpError`.
-- [ ] Alla API-fel har samma struktur.
-- [ ] Jag kan förklara skillnaden mellan 400, 401, 403, 404 och 500.
-
-## Vecka 7: Säkerhet, OWASP, lösenord och token
-
-### Mål
-
-Du ska kunna:
-
-- förstå grundläggande backend-säkerhet
-- beskriva Broken Access Control
-- beskriva Cryptographic Failures
-- beskriva Injection
-- hash:a lösenord
-- skapa login
-- använda token
-- skydda routes med auth middleware
-
-### Titta i projektet
-
-Öppna:
-
-- `backyard/backend/src/utils/security.ts`
-- `backyard/backend/src/middleware/auth.ts`
-- `backyard/backend/src/controllers/organizersController.ts`
-- `backyard/backend/src/controllers/runnersController.ts`
-
-### Fråga till dig
-
-Vad är skillnaden mellan 401 och 403?
-
-Försök svara:
-
-- 401: du är inte inloggad eller token är ogiltig
-- 403: du är inloggad men har fel roll eller saknar behörighet
-
-### Det projektet redan gör bra
-
-- lösenord sparas inte i klartext
-- token skapas vid login
-- skyddade routes kräver `Authorization: Bearer <token>`
-- arrangör och löpare har olika auth-middleware
-- ägarskap kontrolleras innan tävling uppdateras eller tas bort
-
-### Viktig kursnotering
-
-Projektet använder Node `crypto` för hashning och en egen HMAC-token. Det är lärorikt, men PDF:ens vecka 7 nämner bcrypt och JWT.
-
-För att matcha kursmålet tydligare kan du senare byta till:
-
-- `bcrypt` för lösenord
-- `jsonwebtoken` för JWT
-
-### Kodexempel: lösenord med bcrypt
-
-```ts
-import bcrypt from 'bcrypt';
-
-export const hashPassword = async (password: string) => {
-  return bcrypt.hash(password, 12);
-};
-
-export const verifyPassword = async (
-  password: string,
-  passwordHash: string,
-) => {
-  return bcrypt.compare(password, passwordHash);
-};
-```
-
-### Kodexempel: JWT
-
-```ts
-import jwt from 'jsonwebtoken';
-
-export const createToken = (userId: string, role: 'organizer' | 'runner') => {
-  return jwt.sign(
-    { sub: userId, role },
-    process.env.AUTH_SECRET as string,
-    { expiresIn: '2h' },
-  );
-};
-```
-
-### Kodexempel: skyddad route
-
-```ts
-router.post(
-  '/',
-  requireAuth,
-  validateCompetition,
-  createCompetitionForOrganizer,
-);
-```
-
-### OWASP kopplat till ditt projekt
-
-Broken Access Control:
-
-```ts
-requireCompetitionOwner(competition, req.organizer.id);
-```
-
-Det hindrar en arrangör från att ändra någon annans tävling.
-
-Cryptographic Failures:
-
-```ts
-const passwordHash = await hashPassword(password);
-```
-
-Det hindrar lösenord från att sparas i klartext.
-
-Injection:
-
-```ts
-const id = Number(req.params.id);
-```
-
-Det är bättre än att skicka okontrollerad input direkt till databasen.
-
-### Varför är detta viktigt?
-
-Säkerhet kan inte bara ligga i frontend. Även om en knapp är gömd kan någon fortfarande skicka HTTP-request direkt till backend. Därför måste backend alltid kontrollera token, roll och ägarskap.
-
-### Alternativ
-
-Du kan använda sessions och cookies i stället för JWT. Du kan också använda Passport.js. För ett REST API med React frontend är JWT vanligt och pedagogiskt.
-
-### Checklista
-
-- [ ] Lösenord hash:as.
-- [ ] Login jämför hashat lösenord.
-- [ ] Login returnerar token.
-- [ ] Skyddade routes kräver token.
-- [ ] Backend skiljer på arrangör och löpare.
-- [ ] Ägarskap kontrolleras innan ändring eller borttagning.
-- [ ] Jag kan förklara 401 och 403.
-- [ ] Jag kan nämna minst tre OWASP-risker.
-
-## Slutövning: visa att vecka 1-7 finns
-
-Gör detta som en mini-redovisning för dig själv.
-
-### 1. Starta projektet
+När du har gjort en del, kör:
 
 ```bash
 cd backyard/backend
-npm run dev
-```
-
-Säg högt:
-
-```text
-Servern startar via server.ts, men Express-appen ligger i app.ts.
-```
-
-### 2. Kör tester
-
-```bash
-cd backyard/backend
+npm run build
 npm test
 ```
 
-Säg högt:
+Om TypeScript stoppar dig är det bra. Då får du veta exakt vilken fil som fortfarande tror att ett id är `number`, eller vilken controller som fortfarande använder gammal array-logik.
 
-```text
-Testerna startar appen, gör HTTP-anrop och kontrollerar API-svar.
-```
+## Bra ordning att göra arbetet i
 
-### 3. Peka ut en route
+1. Uppdatera `types/domain.ts`.
+2. Skapa Mongoose models.
+3. Uppdatera `security.ts`.
+4. Uppdatera `organizersController.ts`.
+5. Uppdatera `auth.ts`.
+6. Uppdatera `competitionsController.ts`.
+7. Uppdatera `runnersController.ts`.
+8. Uppdatera testerna.
+9. Kör `npm run build`.
+10. Kör `npm test`.
 
-```text
-POST /api/v1/competitions
-```
-
-Säg högt:
-
-```text
-Den kräver arrangörstoken, validerar body och skapar en tävling.
-```
-
-### 4. Peka ut en säkerhetskontroll
-
-```ts
-requireCompetitionOwner(competition, req.organizer.id);
-```
-
-Säg högt:
-
-```text
-Den hindrar Broken Access Control eftersom arrangörer bara får ändra egna tävlingar.
-```
-
-### 5. Peka ut det största kvarvarande gapet
-
-```text
-Controllers behöver gå från in-memory arrays till Mongoose/MongoDB.
-```
-
-Det här är centralt. När du förstår detta har du verkligen förstått skillnaden mellan att "ha MongoDB installerat" och att "använda MongoDB som datalager".
-
-## Samlad checklista vecka 1-7
-
-- [ ] Vecka 1: jag kan förklara Express-appens startflöde.
-- [ ] Vecka 2: jag kan förklara API-resurser och routes.
-- [ ] Vecka 3: jag kan förklara projektets TypeScript-typer.
-- [ ] Vecka 4: jag kan förklara MongoDB-gapet och vad som behöver ändras.
-- [ ] Vecka 5: jag kan förklara relationer, filter och tester.
-- [ ] Vecka 6: jag kan förklara validering och central felhantering.
-- [ ] Vecka 7: jag kan förklara auth, token, roller och OWASP-risker.
-
-## Rekommenderad nästa workshop
-
-Nästa praktiska steg är att välja en resurs och flytta den från in-memory store till MongoDB.
-
-Börja med `Competition`, eftersom den är central i appen:
-
-1. skapa Mongoose-schema för `Competition`
-2. skapa `CompetitionModel`
-3. ändra `listCompetitions`
-4. ändra `createCompetitionForOrganizer`
-5. ändra `getCompetitionById`
-6. ändra testerna så de använder testdata i databasen
-
-Det är den övningen som tydligast binder ihop vecka 4, 5, 6 och 7.
+Du gör rätt som vill ha fil och kod konkret. Det centrala att öva på nu är att följa en request hela vägen: route, middleware, validering, controller, model, databas och tillbaka till response. När du kan följa den kedjan har du förstått backend på riktigt.

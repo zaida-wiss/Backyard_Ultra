@@ -13,7 +13,7 @@ Denna app gör det möjligt att följa löpare live under en Backyard Ultra-täv
 
 ## Användarflöde
 1. Användaren ser en lista med löpare och deras varvtider.
-2. När en löpare har sprungit ett varv, fylls tiden i via ett formulär.
+2. När en löpare har sprungit ett varv, fylls tiden i via ett knapptryck. Ny kolumn skapas för varje varv och knappen för när löparen sprungit klart varvet finns i den koplumnen ända tills knappen är tryckt på. Då ersätts knappen mot en varvtid istället.
 3. När en löpare går i mål på ett varv klickar användaren på en knapp för att registrera tiden för just den löparen.
 4. Endast löpare som är kvar i tävlingen visas som valbara för nästa varv.
 5. Dashboarden uppdateras och visar nya varvtider och medeltider.
