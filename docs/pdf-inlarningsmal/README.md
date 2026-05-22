@@ -6,6 +6,7 @@ Varje vecka samlar vad du behöver kunna, vad du kan bygga i Backyard Ultra-proj
 
 ## Veckor
 
+- [Workshop: Backendstruktur och kursmål vecka 1-7](./workshop-vecka-01-07-backend-check.md)
 - [Vecka 1: Node.js, HTTP och Express-grund](./vecka-01-node-express-grund.md)
 - [Vecka 2: REST API-design, struktur och middleware](./vecka-02-rest-api-struktur.md)
 - [Vecka 3: TypeScript i Node.js och Express](./vecka-03-typescript-express.md)

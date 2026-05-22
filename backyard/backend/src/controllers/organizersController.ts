@@ -1,23 +1,16 @@
 import type { NextFunction, Request, Response } from "express";
 import { organizers } from "../data/store";
-import { createOrganizer, toPublicOrganizer } from "../models/organizer";
-import HttpError from "../utils/httpError";
+import { createOrganizer, toPublicOrganizer } from "../models/organizer.model";
+import type {
+  LoginBody,
+  OrganizerRegistrationBody,
+} from "../schemas/organizerSchema";
+import HttpError from "../errors/httpError";
 import { createToken, hashPassword, verifyPassword } from "../utils/security";
-
-type RegisterOrganizerBody = {
-  name: string;
-  email: string;
-  password: string;
-};
-
-type LoginOrganizerBody = {
-  email: string;
-  password: string;
-};
 
 export const registerOrganizer = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, email, password } = req.validatedBody as RegisterOrganizerBody;
+    const { name, email, password } = req.validatedBody as OrganizerRegistrationBody;
     const existingOrganizer = organizers.find((organizer) => organizer.email === email);
 
     if (existingOrganizer) {
@@ -43,7 +36,7 @@ export const registerOrganizer = async (req: Request, res: Response, next: NextF
 
 export const loginOrganizer = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password } = req.validatedBody as LoginOrganizerBody;
+    const { email, password } = req.validatedBody as LoginBody;
     const organizer = organizers.find((currentOrganizer) => currentOrganizer.email === email);
 
     if (!organizer || !verifyPassword(password, organizer.passwordHash)) {

@@ -1,20 +1,15 @@
 import type { NextFunction, Request, Response } from "express";
 import { competitions, runnerAccounts, runners } from "../data/store";
-import { createRunnerAccount, toPublicRunnerAccount } from "../models/runnerAccount";
-import { createRunner } from "../models/runner";
-import type { CreateRunnerAccountInput, CreateRunnerInput } from "../types/domain";
-import HttpError from "../utils/httpError";
+import { createRunnerAccount, toPublicRunnerAccount } from "../models/runnerAccount.model";
+import { createRunner } from "../models/runner.model";
+import type {
+  RunnerAccountRegistrationBody,
+  ValidatedRunnerBody,
+} from "../schemas/runnerSchema";
+import type { LoginBody } from "../schemas/organizerSchema";
+import HttpError from "../errors/httpError";
 import { createToken, hashPassword, verifyPassword } from "../utils/security";
 import { getCompetitionOrThrow, requireCompetitionOwner } from "./competitionsController";
-
-type ValidatedRunnerBody = Omit<CreateRunnerInput, "competitionId">;
-type RegisterRunnerAccountBody = Omit<CreateRunnerAccountInput, "passwordHash"> & {
-  password: string;
-};
-type LoginRunnerBody = {
-  email: string;
-  password: string;
-};
 
 export const listRunners = async (req: Request, res: Response) => {
   const competitionId = req.query.competitionId ? Number(req.query.competitionId) : null;
@@ -61,7 +56,7 @@ export const getRunnerById = async (req: Request, res: Response, next: NextFunct
 
 export const registerRunnerAccount = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { firstName, lastName, email, password, club } = req.validatedBody as RegisterRunnerAccountBody;
+    const { firstName, lastName, email, password, club } = req.validatedBody as RunnerAccountRegistrationBody;
     const existingRunner = runnerAccounts.find((runnerAccount) => runnerAccount.email === email);
 
     if (existingRunner) {
@@ -89,7 +84,7 @@ export const registerRunnerAccount = async (req: Request, res: Response, next: N
 
 export const loginRunner = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password } = req.validatedBody as LoginRunnerBody;
+    const { email, password } = req.validatedBody as LoginBody;
     const runnerAccount = runnerAccounts.find((currentRunner) => currentRunner.email === email);
 
     if (!runnerAccount || !verifyPassword(password, runnerAccount.passwordHash)) {

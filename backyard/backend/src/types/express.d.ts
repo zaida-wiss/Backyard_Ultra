@@ -1,4 +1,5 @@
 import type { Organizer, RunnerAccount } from "./domain";
+import type { CompetitionFilters } from "../schemas/competitionFiltersSchema";
 
 declare global {
   namespace Express {
@@ -6,6 +7,7 @@ declare global {
       organizer?: Organizer;
       runnerAccount?: RunnerAccount;
       validatedBody?: unknown;
+      competitionFilters?: CompetitionFilters;
     }
   }
 }

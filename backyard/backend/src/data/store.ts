@@ -1,7 +1,7 @@
-import { createCompetition } from "../models/competition";
-import { createOrganizer } from "../models/organizer";
-import { createRunner } from "../models/runner";
-import { createRunnerAccount } from "../models/runnerAccount";
+import { createCompetition } from "../models/competition.model";
+import { createOrganizer } from "../models/organizer.model";
+import { createRunner } from "../models/runner.model";
+import { createRunnerAccount } from "../models/runnerAccount.model";
 import type { Competition, Organizer, Runner, RunnerAccount } from "../types/domain";
 import { hashPassword } from "../utils/security";
 

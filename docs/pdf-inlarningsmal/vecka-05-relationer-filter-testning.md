@@ -37,9 +37,20 @@ router.get('/competitions', async (req, res) => {
 
 ## TypeScript-exempel: filter, sortering och paginering
 
+I projektet delar vi upp query-filter i tre lager:
+
+```text
+middleware/competitionFilters.ts
+  -> läser req.query och lägger filter på req
+schemas/competitionFiltersSchema.ts
+  -> validerar och normaliserar query
+services/competitionFilters.ts
+  -> filtrerar data utan att känna till Express
+```
+
 ```ts
 import type { FilterQuery } from 'mongoose';
-import { CompetitionModel, CompetitionDocument } from '../models/Competition';
+import { CompetitionModel, CompetitionDocument } from '../models/competition.model';
 
 type CompetitionQuery = {
   type?: string;
@@ -118,6 +129,14 @@ registrationSchema.index(
 
 ## Testexempel
 
+I projektet samlar vi testfiler i `src/__tests__/`, så testkod inte blandas med routes, controllers och models.
+
+```text
+src/
+  __tests__/
+    app.test.ts
+```
+
 ```ts
 import request from 'supertest';
 import app from '../src/app';
@@ -139,5 +158,5 @@ it('returns competitions', async () => {
 - [ ] Relationer använder referencing där det passar.
 - [ ] `populate` används där klienten behöver relaterad data.
 - [ ] Unika kombinationer skyddas med index.
+- [ ] Testfiler ligger i `__tests__/`.
 - [ ] Integrationstester täcker minst ett lyckat och ett felaktigt flöde.
-

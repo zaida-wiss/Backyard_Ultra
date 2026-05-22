@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import HttpError from "../utils/httpError";
+import HttpError from "../errors/httpError";
 
 export const notFoundHandler = async (req: Request, res: Response) => {
   res.status(404).json({

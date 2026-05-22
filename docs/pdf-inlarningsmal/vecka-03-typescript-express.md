@@ -84,6 +84,7 @@ export const createRunner = async (
 ## Egna felklasser
 
 ```ts
+// src/errors/httpError.ts
 export default class HttpError extends Error {
   status: number;
   code: string;
@@ -115,5 +116,4 @@ type PublicUser = Omit<User, 'passwordHash'>;
 - [ ] Jag använder `export const namn = async`.
 - [ ] Jag har egna typer för body/params/query.
 - [ ] Jag använder `Omit` eller `Pick` där det passar.
-- [ ] Jag har en egen `HttpError`.
-
+- [ ] Jag har en egen `HttpError` i `errors/`.

@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { organizers, runnerAccounts } from "../data/store";
-import HttpError from "../utils/httpError";
+import HttpError from "../errors/httpError";
 import { verifyToken } from "../utils/security";
 
 export const requireAuth = async (req: Request, _res: Response, next: NextFunction) => {

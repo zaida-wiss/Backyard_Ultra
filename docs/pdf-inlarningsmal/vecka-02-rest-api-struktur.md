@@ -21,12 +21,53 @@ Strukturera API:t i filer:
 src/
   app.ts
   server.ts
+  config/
+    database.ts
   routes/
-    competitions.ts
+    competitions-route.ts
+    organizers-route.ts
+    runners-route.ts
   controllers/
     competitionsController.ts
+    organizersController.ts
+    runnersController.ts
+  models/
+    competition.model.ts
+    organizer.model.ts
+    runner.model.ts
+    runnerAccount.model.ts
+  schemas/
+    competitionSchema.ts
+    competitionFiltersSchema.ts
+    organizerSchema.ts
+    runnerSchema.ts
+    validationHelpers.ts
   middleware/
+    auth.ts
+    competitionFilters.ts
+    validate.ts
     errorHandler.ts
+  services/
+    competitionFilters.ts
+  errors/
+    httpError.ts
+  types/
+    domain.ts
+    express.d.ts
+  __tests__/
+    app.test.ts
+```
+
+I det här projektet använder vi suffix för att visa vilket lager filen tillhör:
+
+- route-filer slutar på `-route.ts`
+- model-filer slutar på `.model.ts`
+
+Exempel:
+
+```text
+routes/competitions-route.ts
+models/competition.model.ts
 ```
 
 ## JavaScript-exempel: router
@@ -115,9 +156,11 @@ export const errorHandler = async (
 ## Checklista
 
 - [ ] Routes ligger i `routes/`.
+- [ ] Route-filer slutar på `-route.ts`.
 - [ ] Controllers ligger i `controllers/`.
+- [ ] Request-schemas ligger i `schemas/`.
+- [ ] Egna felklasser ligger i `errors/`.
 - [ ] Appen använder `/api/v1`.
 - [ ] Okända routes ger `404`.
 - [ ] Fel returneras i samma format varje gång.
 - [ ] Jag kan testa mina endpoints i Thunder Client/Postman.
-

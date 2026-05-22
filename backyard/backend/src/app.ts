@@ -2,9 +2,9 @@ import cors from "cors";
 import express from "express";
 import morgan from "morgan";
 
-import competitionsRouter from "./routes/competitions";
-import organizersRouter from "./routes/organizers";
-import runnersRouter from "./routes/runners";
+import competitionsRouter from "./routes/competitions-route";
+import organizersRouter from "./routes/organizers-route";
+import runnersRouter from "./routes/runners-route";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 
 const app = express();

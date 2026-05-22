@@ -13,13 +13,14 @@ import {
   registerRunner,
 } from "../controllers/runnersController";
 import { requireAuth, requireRunnerAuth } from "../middleware/auth";
+import { parseCompetitionFiltersHandler } from "../middleware/competitionFilters";
 import { validateCompetition, validateRunner } from "../middleware/validate";
 
 const router = Router();
 
 // GET /api/v1/competitions
 // Kan filtreras med ?organizerId=1 eller ?type=Backyard%20Ultra.
-router.get('/', listCompetitions);
+router.get('/', parseCompetitionFiltersHandler, listCompetitions);
 
 // POST /api/v1/competitions
 // Kräver inloggad arrangör.

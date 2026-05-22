@@ -16,6 +16,21 @@ Efter veckan ska du kunna:
 
 Alla endpoints ska ha validering innan controller-logiken körs.
 
+I projektstrukturen ligger ansvaret så här:
+
+```text
+schemas/
+  competitionSchema.ts
+  organizerSchema.ts
+  runnerSchema.ts
+middleware/
+  validate.ts
+errors/
+  httpError.ts
+```
+
+`schemas/` beskriver vad som är giltig input. `validate.ts` kör rätt schema. `errors/` innehåller egna felklasser.
+
 ## JavaScript-exempel: manuell validering
 
 ```js
@@ -40,23 +55,7 @@ function validateCompetition(req, res, next) {
 
 ```ts
 import type { Request, Response, NextFunction } from 'express';
-import HttpError from '../utils/HttpError';
-
-type RequestBody = Record<string, unknown>;
-
-const requireText = (
-  body: RequestBody,
-  field: string,
-  label = field,
-): string => {
-  const value = body[field];
-
-  if (!value || typeof value !== 'string') {
-    throw new HttpError(400, 'BAD_REQUEST', `${label} krävs`);
-  }
-
-  return value.trim();
-};
+import { parseCompetition } from '../schemas/competitionSchema';
 
 export const validateCompetition = async (
   req: Request,
@@ -64,17 +63,28 @@ export const validateCompetition = async (
   next: NextFunction,
 ) => {
   try {
-    const body = req.body as RequestBody;
-
-    req.validatedBody = {
-      name: requireText(body, 'name', 'tävlingsnamn'),
-      place: requireText(body, 'place', 'plats'),
-    };
-
+    req.validatedBody = parseCompetition(req.body);
     return next();
   } catch (error) {
     return next(error);
   }
+};
+```
+
+## TypeScript-exempel: schemafil
+
+```ts
+// src/schemas/competitionSchema.ts
+import HttpError from '../errors/httpError';
+
+export const parseCompetition = (body: Record<string, unknown>) => {
+  if (typeof body.name !== 'string' || body.name.trim() === '') {
+    throw new HttpError(400, 'BAD_REQUEST', 'tävlingsnamn krävs');
+  }
+
+  return {
+    name: body.name.trim(),
+  };
 };
 ```
 
@@ -124,8 +134,9 @@ export const errorHandler = async (error, req, res, next) => {
 - [ ] `body` valideras innan data används.
 - [ ] `params` valideras innan id används.
 - [ ] `query` valideras innan filtrering.
+- [ ] Valideringsregler ligger i `schemas/`.
+- [ ] Middleware kör schema och lägger resultatet i `req.validatedBody`.
 - [ ] Alla fel går via `next(error)`.
 - [ ] API:t returnerar konsekvent felformat.
 - [ ] Produktionsfel läcker inte stack traces till klienten.
 - [ ] Jag kan förklara skillnaden mellan Zod och Mongoose-validering.
-

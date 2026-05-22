@@ -62,7 +62,7 @@ Nu kan TypeScript stoppa stavfel innan servern körs.
 
 ```ts
 import type { Request, Response, NextFunction } from 'express';
-import HttpError from '../utils/httpError';
+import HttpError from '../errors/httpError';
 import type { Role } from '../types/domain';
 
 export const requireRole = (...allowedRoles: Role[]) => {

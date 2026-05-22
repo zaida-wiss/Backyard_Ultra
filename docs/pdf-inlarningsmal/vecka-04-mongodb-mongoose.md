@@ -21,6 +21,13 @@ Byt från in-memory arrays till Mongoose-modeller för:
 - `Competition`
 - `Registration`
 
+I den nuvarande projektstrukturen finns redan `schemas/` för request-validering. När du går vidare med Mongoose kan du antingen:
+
+- skapa Mongoose-schemas i `models/`, nära varje Mongoose model
+- eller skapa en separat undermapp som `schemas/mongoose/`
+
+Det viktiga är att du kan skilja på request-schema och databasschema.
+
 ## JavaScript-exempel: anslutning
 
 ```js
@@ -57,7 +64,9 @@ export const connectToDatabase = async () => {
 };
 ```
 
-## TypeScript-exempel: Mongoose schema
+## TypeScript-exempel: Mongoose schema och model
+
+Lägg gärna filen som `src/models/competition.model.ts`. Suffixet `.model` gör det tydligt att filen tillhör model-lagret.
 
 ```ts
 import { Schema, model, InferSchemaType } from 'mongoose';
@@ -119,6 +128,6 @@ export const createCompetition = async (data: {
 - [ ] `MONGO_URI` finns i `.env.example` utan hemligheter.
 - [ ] Servern ansluter till MongoDB innan `app.listen`.
 - [ ] Minst en Mongoose-modell finns.
+- [ ] Jag kan skilja på request-schema och Mongoose-schema.
 - [ ] Minst en route använder databasen i stället för array.
 - [ ] `null` från databasen hanteras med `404`.
-

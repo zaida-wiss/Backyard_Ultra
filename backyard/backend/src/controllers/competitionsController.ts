@@ -1,11 +1,10 @@
 import type { NextFunction, Request, Response } from "express";
 import { competitions, runners } from "../data/store";
-import { createCompetition } from "../models/competition";
-import { filterCompetitions, parseCompetitionFilters } from "../services/competitionFilters";
-import type { Competition, CreateCompetitionInput } from "../types/domain";
-import HttpError from "../utils/httpError";
-
-type ValidatedCompetitionBody = Omit<CreateCompetitionInput, "organizerId">;
+import { createCompetition } from "../models/competition.model";
+import type { ValidatedCompetitionBody } from "../schemas/competitionSchema";
+import { filterCompetitions } from "../services/competitionFilters";
+import type { Competition } from "../types/domain";
+import HttpError from "../errors/httpError";
 
 export const getCompetitionOrThrow = (id: number): Competition => {
   const competition = competitions.find((currentCompetition) => currentCompetition.id === id);
@@ -29,8 +28,11 @@ export const requireCompetitionOwner = (competition: Competition | undefined, or
 
 export const listCompetitions = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const filters = parseCompetitionFilters(req.query as Record<string, unknown>);
-    return res.json(filterCompetitions(competitions, filters));
+    if (!req.competitionFilters) {
+      throw new HttpError(500, 'FILTERS_NOT_PARSED', 'Tävlingsfilter saknas');
+    }
+
+    return res.json(filterCompetitions(competitions, req.competitionFilters));
   } catch (err) {
     return next(err);
   }

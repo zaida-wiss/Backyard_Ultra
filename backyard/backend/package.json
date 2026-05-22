@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "test": "npm run build && node --test dist/app.test.js",
+    "test": "npm run build && node --test dist/__tests__/*.test.js",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js"
   },

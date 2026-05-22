@@ -47,8 +47,8 @@ Det här är inte tillräckligt, eftersom lösenordet inte kontrolleras och klie
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import type { Request, Response, NextFunction } from 'express';
-import HttpError from '../utils/httpError';
-import Organizer from '../models/Organizer';
+import HttpError from '../errors/httpError';
+import Organizer from '../models/organizer.model';
 
 export const loginOrganizer = async (
   req: Request,
@@ -90,7 +90,7 @@ export const loginOrganizer = async (
 ```ts
 import jwt from 'jsonwebtoken';
 import type { Request, Response, NextFunction } from 'express';
-import HttpError from '../utils/httpError';
+import HttpError from '../errors/httpError';
 
 type TokenPayload = {
   sub: string;
