@@ -30,6 +30,26 @@ const runnerSchema = new Schema(
   { timestamps: true },
 );
 
+runnerSchema.index(
+  { competitionId: 1, runnerAccountId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      runnerAccountId: { $type: "objectId" },
+    },
+  },
+);
+
+runnerSchema.index(
+  { competitionId: 1, email: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      email: { $type: "string" },
+    },
+  },
+);
+
 export type RunnerFields = InferSchemaType<typeof runnerSchema>;
 export type RunnerDocument = HydratedDocument<RunnerFields>;
 
