@@ -29,7 +29,7 @@ export default function RunnerDashboard({ runner, token }: RunnerDashboardProps)
   const [registrations, setRegistrations] = useState<RunnerRegistrationWithCompetition[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [isSubmittingCompetitionId, setIsSubmittingCompetitionId] = useState<number | null>(null);
+  const [isSubmittingCompetitionId, setIsSubmittingCompetitionId] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([

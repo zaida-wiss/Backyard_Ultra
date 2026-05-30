@@ -94,6 +94,9 @@ export function UserLogin ({onAuthSuccess}: UserLoginProps) {
             </div>
           )}
 
+          {isRegisterMode && authRole === "runner" && fieldErrors.firstName && <div className="field-error">{fieldErrors.firstName}</div>}
+          {isRegisterMode && authRole === "runner" && fieldErrors.lastName && <div className="field-error">{fieldErrors.lastName}</div>}
+
           {isRegisterMode && authRole === "runner" && (
             <label>
               Klubb
@@ -167,7 +170,7 @@ export function UserLogin ({onAuthSuccess}: UserLoginProps) {
             type= "button"
             className="toggle-mode-btn"
             disabled={isFormBlocked}
-            onClick={() => setIsRegisterMode(mode => !mode)}
+            onClick={() => setIsRegisterMode(!isRegisterMode)}
           >
             {isRegisterMode ? "Har du redan ett konto? Logga in" : "Inget konto? Registrera konto"}
           </button>

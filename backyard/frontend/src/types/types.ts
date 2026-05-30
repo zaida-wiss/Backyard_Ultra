@@ -10,14 +10,15 @@ export type RunnersProps = {
 };
 
 export type Organizer = {
-  id: number;
+  id: string;
   name: string;
   email: string;
+  role: "admin" | "organizer";
   createdAt: string;
 };
 
 export type RunnerAccount = {
-  id: number;
+  id: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -42,8 +43,8 @@ export type RunnerAuthResponse = {
 export type AuthResponse = OrganizerAuthResponse | RunnerAuthResponse;
 
 export type Competition = {
-  id: number;
-  organizerId: number;
+  id: string;
+  organizerId: string;
   name: string;
   type: string;
   place: string;
@@ -54,14 +55,15 @@ export type Competition = {
 };
 
 export type RunnerRegistration = {
-  id: number;
-  competitionId: number;
-  runnerAccountId: number | null;
+  id: string;
+  competitionId: string;
+  runnerAccountId: string | null;
   firstName: string;
   lastName: string;
   email: string | null;
   club: string | null;
   status: "registered";
+  deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };

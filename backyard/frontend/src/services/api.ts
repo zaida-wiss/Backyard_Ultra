@@ -118,7 +118,7 @@ export async function createCompetition(
   return parseResponse<Competition>(response);
 }
 
-export async function listCompetitions(organizerId?: number): Promise<Competition[]> {
+export async function listCompetitions(organizerId?: string): Promise<Competition[]> {
   const query = organizerId ? `?organizerId=${organizerId}` : "";
   const response = await fetch(`${API_BASE_URL}/competitions${query}`);
 
@@ -127,7 +127,7 @@ export async function listCompetitions(organizerId?: number): Promise<Competitio
 
 export async function registerCurrentRunnerForCompetition(
   token: string,
-  competitionId: number,
+  competitionId: string,
 ): Promise<RunnerRegistration> {
   const response = await fetch(`${API_BASE_URL}/competitions/${competitionId}/runners/me`, {
     method: "POST",

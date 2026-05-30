@@ -1,40 +1,39 @@
-# Backyard Ultra Live Tracker
+# Backyard Ultra
 
-## Syfte
-Denna app gör det möjligt att följa löpare live under en Backyard Ultra-tävling. Varje löpare springer ett varv varje timme tills endast en löpare återstår. Appen visualiserar deltagarlistan, varvtider och medeltider per varv.
+Backyard Ultra är ett fullstackprojekt med React/TypeScript i frontend och Node.js/Express/TypeScript i backend.
 
-## Funktioner
-- Visa alla deltagare i en vänsterkolumn.
-- Visa varvtider för varje löpare i en högerkolumn.
-- Rubrik överst med aktuell varvnummer.
-- Formulär för att lägga till varvtid för en löpare.
-- Beräkning och visning av medeltid per varv för varje löpare.
-- Mockdata används initialt, backend kan kopplas på senare.
+## Dokumentation
 
-## Användarflöde
-1. Användaren ser en lista med löpare och deras varvtider.
-2. När en löpare har sprungit ett varv, fylls tiden i via ett knapptryck. Ny kolumn skapas för varje varv och knappen för när löparen sprungit klart varvet finns i den koplumnen ända tills knappen är tryckt på. Då ersätts knappen mot en varvtid istället.
-3. När en löpare går i mål på ett varv klickar användaren på en knapp för att registrera tiden för just den löparen.
-4. Endast löpare som är kvar i tävlingen visas som valbara för nästa varv.
-5. Dashboarden uppdateras och visar nya varvtider och medeltider.
-6. Varvnummer och status visas tydligt i UI:t.
-7. En ny varvkolumn skapas automatiskt när minst två löpare har gått i mål på föregående varv. Tävlingen fortsätter tills endast en löpare återstår.
+Börja här:
 
-## Teknikstack
-- React
-- TypeScript
-- (Planerat) Node.js backend
-- (Valfritt) Google Sheets eller databas för lagring
+- [Dokumentationsöversikt](./docs/README.md)
+- [Status vecka 1-9](./backyard/vecka-01-09-status-och-vagledning.md)
+- [API-flöden](./docs/api-floden.md)
+- [GDPR, loggning och radering](./docs/gdpr-loggning.md)
 
-## Framtida förbättringar
-- Realtidsuppdatering med websockets.
-- Statistik och visualiseringar.
-- Admin-panel för att hantera tävlingen.
-- Integration med Google Sheets eller annan databas.
+## Teknik
 
-## Installation
-1. Klona projektet.
-2. Installera beroenden med `npm install`.
-3. Starta appen med `npm start`.
-# Backyard_Ultra
-Backyard_Ultra
+- React + TypeScript + Vite
+- Node.js + Express + TypeScript + ESM
+- MongoDB + Mongoose
+- JWT + bcrypt
+- Pino + pino-http
+- Zod i frontendformulär
+
+## Starta
+
+Backend:
+
+```bash
+cd backyard/backend
+npm install
+npm run dev
+```
+
+Frontend:
+
+```bash
+cd backyard/frontend
+npm install
+npm run dev
+```

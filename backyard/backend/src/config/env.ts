@@ -1,44 +1,35 @@
 import "dotenv/config";
+import { z } from "zod";
 
-const requiredEnv = (name: string): string => {
-  const value = process.env[name];
+const envSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  PORT: z.coerce.number().int().positive().default(3000),
+  CORS_ORIGIN: z.url().default("http://localhost:5173"),
+  AUTH_SECRET: z.string().min(1, "AUTH_SECRET saknas i miljövariablerna"),
+  MONGO_URI: z.string().min(1, "MONGO_URI saknas i miljövariablerna"),
+});
 
-  // Secrets och databas-URL ska saknas högt och tydligt, inte ge diffusa fel senare.
-  if (!value) {
-    throw new Error(`${name} saknas i miljövariablerna`);
+const parseEnv = () => {
+  const result = envSchema.safeParse(process.env);
+
+  if (!result.success) {
+    const messages = result.error.issues.map((issue) => issue.message).join(", ");
+
+    throw new Error(`Ogiltig .env-konfiguration: ${messages}`);
   }
 
-  return value;
+  return result.data;
 };
 
-const toPort = (value: string | undefined): number => {
-  // PORT kommer från .env som text, men app.listen behöver ett nummer.
-  const port = Number(value ?? 3000);
-
-  if (!Number.isInteger(port) || port < 1) {
-    throw new Error("PORT måste vara ett positivt heltal");
-  }
-
-  return port;
-};
+// .env valideras en gång när appen startar. Efter det läser resten av appen typad config.
+const env = parseEnv();
 
 const config = {
-  // Getters läser process.env när värdet används. Det gör tester enklare att styra.
-  get nodeEnv() {
-    return process.env.NODE_ENV ?? "development";
-  },
-  get port() {
-    return toPort(process.env.PORT);
-  },
-  get mongoUri() {
-    return requiredEnv("MONGO_URI");
-  },
-  get authSecret() {
-    return requiredEnv("AUTH_SECRET");
-  },
-  get corsOrigin() {
-    return process.env.CORS_ORIGIN ?? "http://localhost:5173";
-  },
+  nodeEnv: env.NODE_ENV,
+  port: env.PORT,
+  mongoUri: env.MONGO_URI,
+  authSecret: env.AUTH_SECRET,
+  corsOrigin: env.CORS_ORIGIN,
 };
 
 export { config };

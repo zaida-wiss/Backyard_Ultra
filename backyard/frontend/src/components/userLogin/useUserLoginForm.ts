@@ -2,12 +2,8 @@ import { useState, type FormEvent } from "react";
 import { loginOrganizer, loginRunner, registerOrganizer, registerRunner } from "../../services/api";
 import type { AuthResponse, AuthRole } from "../../types/types";
 import {
-  type FieldErrors,
-  validateUserName,
-  validateEmail,
-  validateConfirmEmail,
-  validatePassword,
-  validateConfirmPassword,
+  emptyFieldErrors,
+  validateAuthForm,
 } from "./validation";
 
 export type UserData = {
@@ -32,14 +28,6 @@ const initialUser: UserData = {
   confirmPassword: "",
 };
 
-const initialFieldErrors: FieldErrors = {
-  userName: "",
-  email: "",
-  confirmEmail: "",
-  password: "",
-  confirmPassword: "",
-};
-
 type UseUserLoginFormProps = {
   onAuthSuccess: (auth: AuthResponse) => void;
 };
@@ -49,27 +37,44 @@ export function useUserLoginForm({ onAuthSuccess }: UseUserLoginFormProps) {
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [authRole, setAuthRole] = useState<AuthRole>("organizer");
   const [user, setUser] = useState<UserData>(initialUser);
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>(initialFieldErrors);
+  const [fieldErrors, setFieldErrors] = useState(emptyFieldErrors);
   const [success, setSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const hasFieldErrors = Object.values(fieldErrors).some(Boolean);
   const isFormBlocked = hasFieldErrors || isSubmitting;
 
-  function updateField<Key extends keyof UserData>(key: Key, value: UserData[Key]) {
-    setUser((previous) => ({ ...previous, [key]: value }));
+  function getFieldErrors(nextUser: UserData, nextRole = authRole, nextMode = isRegisterMode) {
+    // Hela formulärobjektet valideras varje gång, så fält som beror på varandra hänger ihop.
+    return validateAuthForm(nextUser, {
+      authRole: nextRole,
+      isRegisterMode: nextMode,
+    });
   }
 
-  function updateFieldError<Key extends keyof FieldErrors>(
-    key: Key,
-    value: FieldErrors[Key],
-  ) {
-    setFieldErrors((previous) => ({ ...previous, [key]: value }));
+  function updateField<Key extends keyof UserData>(key: Key, value: UserData[Key]) {
+    setUser((previous) => {
+      // Bygg ett nytt objekt först. Då validerar Zod samma data som React snart visar.
+      const nextUser = { ...previous, [key]: value };
+
+      setFieldErrors(getFieldErrors(nextUser));
+
+      return nextUser;
+    });
+  }
+
+  function handleRegisterModeChange(nextMode: boolean) {
+    setIsRegisterMode(nextMode);
+    setFieldErrors(getFieldErrors(user, authRole, nextMode));
+  }
+
+  function handleAuthRoleChange(nextRole: AuthRole) {
+    setAuthRole(nextRole);
+    setFieldErrors(getFieldErrors(user, nextRole, isRegisterMode));
   }
 
   function handleUserNameChange(value: string) {
     updateField("userName", value);
-    updateFieldError("userName", validateUserName(value));
   }
 
   function handleFirstNameChange(value: string) {
@@ -86,43 +91,24 @@ export function useUserLoginForm({ onAuthSuccess }: UseUserLoginFormProps) {
 
   function handleEmailChange(value: string) {
     updateField("email", value);
-    updateFieldError("email", validateEmail(value));
-    updateFieldError("confirmEmail", validateConfirmEmail(value, user.confirmEmail));
   }
 
   function handleConfirmEmailChange(value: string) {
     updateField("confirmEmail", value);
-    updateFieldError("confirmEmail", validateConfirmEmail(user.email, value));
   }
 
   function handlePasswordChange(value: string) {
     updateField("password", value);
-    updateFieldError("password", validatePassword(value));
-    updateFieldError("confirmPassword", validateConfirmPassword(value, user.confirmPassword));
   }
 
   function handleConfirmPasswordChange(value: string) {
     updateField("confirmPassword", value);
-    updateFieldError("confirmPassword", validateConfirmPassword(user.password, value));
   }
 
   function validateBeforeSubmit() {
-    const nextErrors: FieldErrors = {
-      userName: isRegisterMode && authRole === "organizer" ? validateUserName(user.userName) : "",
-      email: validateEmail(user.email),
-      confirmEmail: isRegisterMode ? validateConfirmEmail(user.email, user.confirmEmail) : "",
-      password: validatePassword(user.password),
-      confirmPassword: isRegisterMode
-        ? validateConfirmPassword(user.password, user.confirmPassword)
-        : "",
-    };
+    const nextErrors = getFieldErrors(user);
 
     setFieldErrors(nextErrors);
-
-    if (isRegisterMode && authRole === "runner" && (!user.firstName.trim() || !user.lastName.trim())) {
-      setError("Förnamn och efternamn krävs för löparkonto.");
-      return false;
-    }
 
     return !Object.values(nextErrors).some(Boolean);
   }
@@ -130,6 +116,7 @@ export function useUserLoginForm({ onAuthSuccess }: UseUserLoginFormProps) {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
+    // Submit gör samma objektvalidering en sista gång innan API-anropet skickas.
     if (!validateBeforeSubmit()) {
       setError("Korrigera fälten ovan.");
       setSuccess(false);
@@ -183,8 +170,8 @@ export function useUserLoginForm({ onAuthSuccess }: UseUserLoginFormProps) {
     authRole,
     isFormBlocked,
     isSubmitting,
-    setIsRegisterMode,
-    setAuthRole,
+    setIsRegisterMode: handleRegisterModeChange,
+    setAuthRole: handleAuthRoleChange,
     handleSubmit,
     handleUserNameChange,
     handleFirstNameChange,
