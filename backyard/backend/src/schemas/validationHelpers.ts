@@ -1,23 +1,51 @@
-import HttpError from "../errors/httpError";
+import HttpError from "../errors/httpError.js";
 
 export type RequestBody = Record<string, unknown>;
 
-export const toRequestBody = (body: unknown): RequestBody => {
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    return {};
+const isRequestBody = (body: unknown): body is RequestBody => {
+  if (!body) {
+    return false;
   }
 
-  return body as RequestBody;
+  if (typeof body !== "object") {
+    return false;
+  }
+
+  return !Array.isArray(body);
+};
+
+const isNonEmptyString = (value: unknown): value is string => {
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  return value.trim().length > 0;
+};
+
+export const toRequestBody = (body: unknown): RequestBody => {
+  return isRequestBody(body) ? body : {};
 };
 
 export const isEmail = (value: unknown): value is string => {
-  return typeof value === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 };
 
 export const isDateTimeLocal = (value: unknown): value is string => {
-  return typeof value === "string"
-    && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)
-    && !Number.isNaN(Date.parse(value));
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  const hasDateTimeLocalFormat = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value);
+
+  if (!hasDateTimeLocalFormat) {
+    return false;
+  }
+
+  return !Number.isNaN(Date.parse(value));
 };
 
 export const requireText = (
@@ -27,7 +55,7 @@ export const requireText = (
 ): string => {
   const value = body[field];
 
-  if (!value || typeof value !== "string" || value.trim().length === 0) {
+  if (!isNonEmptyString(value)) {
     throw new HttpError(400, "BAD_REQUEST", `${label} krävs`);
   }
 

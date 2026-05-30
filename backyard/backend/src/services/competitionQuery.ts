@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 
-import type { CompetitionFilters } from "../schemas/competitionFiltersSchema";
+import type { CompetitionFilters } from "../schemas/competitionFiltersSchema.js";
 
 type CompetitionQuery = Record<string, unknown>;
 

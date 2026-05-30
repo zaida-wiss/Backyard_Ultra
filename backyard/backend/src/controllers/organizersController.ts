@@ -1,14 +1,14 @@
 import type { NextFunction, Request, Response } from "express";
 
-import HttpError from "../errors/httpError";
-import { OrganizerModel, toPublicOrganizer } from "../models/organizer.model";
+import HttpError from "../errors/httpError.js";
+import { OrganizerModel, toPublicOrganizer } from "../models/organizer.model.js";
 import type {
   LoginBody,
   OrganizerRegistrationBody,
-} from "../schemas/organizerSchema";
-import { createToken, hashPassword, verifyPassword } from "../utils/security";
+} from "../schemas/organizerSchema.js";
+import { createToken, hashPassword, verifyPassword } from "../utils/jwt.js";
 
-export const registerOrganizer = async (req: Request, res: Response, next: NextFunction) => {
+const registerOrganizer = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, email, password } = req.validatedBody as OrganizerRegistrationBody;
     const existingOrganizer = await OrganizerModel.findOne({ email });
@@ -25,14 +25,14 @@ export const registerOrganizer = async (req: Request, res: Response, next: NextF
 
     return res.status(201).json({
       organizer: toPublicOrganizer(organizer),
-      token: createToken({ id: organizer.id, email: organizer.email }, "organizer"),
+      token: createToken({ id: organizer.id, email: organizer.email }, organizer.role),
     });
   } catch (error) {
     return next(error);
   }
 };
 
-export const loginOrganizer = async (req: Request, res: Response, next: NextFunction) => {
+const loginOrganizer = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.validatedBody as LoginBody;
     const organizer = await OrganizerModel.findOne({ email });
@@ -43,14 +43,14 @@ export const loginOrganizer = async (req: Request, res: Response, next: NextFunc
 
     return res.json({
       organizer: toPublicOrganizer(organizer),
-      token: createToken({ id: organizer.id, email: organizer.email }, "organizer"),
+      token: createToken({ id: organizer.id, email: organizer.email }, organizer.role),
     });
   } catch (error) {
     return next(error);
   }
 };
 
-export const getCurrentOrganizer = async (req: Request, res: Response, next: NextFunction) => {
+const getCurrentOrganizer = async (req: Request, res: Response, next: NextFunction) => {
   if (!req.organizer) {
     return next(new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som arrangör"));
   }
@@ -59,3 +59,5 @@ export const getCurrentOrganizer = async (req: Request, res: Response, next: Nex
     organizer: req.organizer,
   });
 };
+
+export { getCurrentOrganizer, loginOrganizer, registerOrganizer };

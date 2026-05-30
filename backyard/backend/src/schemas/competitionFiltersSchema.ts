@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import HttpError from "../errors/httpError";
+import HttpError from "../errors/httpError.js";
 
 export type CompetitionFilters = {
   organizerId: string | null;

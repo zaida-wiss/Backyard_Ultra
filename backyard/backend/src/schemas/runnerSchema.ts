@@ -1,11 +1,11 @@
-import type { CreateRunnerAccountInput, CreateRunnerInput } from "../types/domain";
-import HttpError from "../errors/httpError";
+import type { CreateRunnerAccountInput, CreateRunnerInput } from "../types/domain.js";
+import HttpError from "../errors/httpError.js";
 import {
   isEmail,
   optionalText,
   requireText,
   toRequestBody,
-} from "./validationHelpers";
+} from "./validationHelpers.js";
 
 export type ValidatedRunnerBody = Omit<CreateRunnerInput, "competitionId">;
 

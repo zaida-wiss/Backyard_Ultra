@@ -1,5 +1,5 @@
-import HttpError from "../errors/httpError";
-import { isEmail, requireText, toRequestBody } from "./validationHelpers";
+import HttpError from "../errors/httpError.js";
+import { isEmail, requireText, toRequestBody } from "./validationHelpers.js";
 
 export type OrganizerRegistrationBody = {
   name: string;

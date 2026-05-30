@@ -36,6 +36,7 @@ export const toPublicOrganizer = (organizer: OrganizerDocument) => {
     id: organizer.id,
     name: organizer.name,
     email: organizer.email,
+    role: organizer.role,
     createdAt: organizer.createdAt.toISOString(),
     updatedAt: organizer.updatedAt.toISOString(),
   };

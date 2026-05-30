@@ -2,6 +2,7 @@ export type Organizer = {
   id: string;
   name: string;
   email: string;
+  role: "admin" | "organizer";
   passwordHash: string;
   createdAt: string;
   updatedAt: string;
@@ -45,6 +46,7 @@ export type Runner = {
   email: string | null;
   club: string | null;
   status: RunnerStatus;
+  deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };

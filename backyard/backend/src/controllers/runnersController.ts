@@ -1,20 +1,20 @@
 import type { NextFunction, Request, Response } from "express";
 import { Types } from "mongoose";
 
-import HttpError from "../errors/httpError";
-import { CompetitionModel, toCompetitionResponse } from "../models/competition.model";
-import { RunnerModel, type RunnerDocument, toRunnerResponse } from "../models/runner.model";
+import HttpError from "../errors/httpError.js";
+import { CompetitionModel, toCompetitionResponse } from "../models/competition.model.js";
+import { RunnerModel, type RunnerDocument, toRunnerResponse } from "../models/runner.model.js";
 import {
   RunnerAccountModel,
   toPublicRunnerAccount,
-} from "../models/runnerAccount.model";
-import type { LoginBody } from "../schemas/organizerSchema";
+} from "../models/runnerAccount.model.js";
+import type { LoginBody } from "../schemas/organizerSchema.js";
 import type {
   RunnerAccountRegistrationBody,
   ValidatedRunnerBody,
-} from "../schemas/runnerSchema";
-import { createToken, hashPassword, verifyPassword } from "../utils/security";
-import { getCompetitionOrThrow, requireCompetitionOwner } from "./competitionsController";
+} from "../schemas/runnerSchema.js";
+import { createToken, hashPassword, verifyPassword } from "../utils/jwt.js";
+import { getCompetitionOrThrow, requireCompetitionOwner } from "./competitionsController.js";
 
 const getRouteParam = (value: string | string[]) => {
   return Array.isArray(value) ? value[0] : value;
@@ -29,9 +29,10 @@ const toObjectIdOrThrow = (id: string, code: string, message: string) => {
 };
 
 const getRunnerOrThrow = async (id: string): Promise<RunnerDocument> => {
-  const runner = await RunnerModel.findById(
-    toObjectIdOrThrow(id, "RUNNER_NOT_FOUND", "Löparen finns inte"),
-  );
+  const runner = await RunnerModel.findOne({
+    _id: toObjectIdOrThrow(id, "RUNNER_NOT_FOUND", "Löparen finns inte"),
+    deletedAt: null,
+  });
 
   if (!runner) {
     throw new HttpError(404, "RUNNER_NOT_FOUND", `Ingen löpare med id ${id} hittades`);
@@ -40,9 +41,9 @@ const getRunnerOrThrow = async (id: string): Promise<RunnerDocument> => {
   return runner;
 };
 
-export const listRunners = async (req: Request, res: Response, next: NextFunction) => {
+const listRunners = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query: Record<string, unknown> = {};
+    const query: Record<string, unknown> = { deletedAt: null };
     const competitionId = req.query.competitionId ? String(req.query.competitionId) : null;
     const status = req.query.status ? String(req.query.status).toLowerCase() : null;
 
@@ -66,14 +67,17 @@ export const listRunners = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-export const listCompetitionRunners = async (
+const listCompetitionRunners = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
     const competition = await getCompetitionOrThrow(getRouteParam(req.params.competitionId));
-    const runners = await RunnerModel.find({ competitionId: competition._id }).sort({ createdAt: 1 });
+    const runners = await RunnerModel.find({
+      competitionId: competition._id,
+      deletedAt: null,
+    }).sort({ createdAt: 1 });
 
     return res.json(runners.map(toRunnerResponse));
   } catch (error) {
@@ -81,7 +85,7 @@ export const listCompetitionRunners = async (
   }
 };
 
-export const getRunnerById = async (req: Request, res: Response, next: NextFunction) => {
+const getRunnerById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const runner = await getRunnerOrThrow(getRouteParam(req.params.id));
 
@@ -91,7 +95,7 @@ export const getRunnerById = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-export const registerRunnerAccount = async (
+const registerRunnerAccount = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -121,7 +125,7 @@ export const registerRunnerAccount = async (
   }
 };
 
-export const loginRunner = async (req: Request, res: Response, next: NextFunction) => {
+const loginRunner = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.validatedBody as LoginBody;
     const runnerAccount = await RunnerAccountModel.findOne({ email });
@@ -139,7 +143,7 @@ export const loginRunner = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-export const getCurrentRunner = async (req: Request, res: Response, next: NextFunction) => {
+const getCurrentRunner = async (req: Request, res: Response, next: NextFunction) => {
   if (!req.runnerAccount) {
     return next(new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som löpare"));
   }
@@ -149,7 +153,7 @@ export const getCurrentRunner = async (req: Request, res: Response, next: NextFu
   });
 };
 
-export const registerRunner = async (req: Request, res: Response, next: NextFunction) => {
+const registerRunner = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.organizer) {
       throw new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som arrangör");
@@ -158,7 +162,7 @@ export const registerRunner = async (req: Request, res: Response, next: NextFunc
     const competition = await getCompetitionOrThrow(getRouteParam(req.params.competitionId));
     const validatedBody = req.validatedBody as ValidatedRunnerBody;
 
-    requireCompetitionOwner(competition, req.organizer.id);
+    requireCompetitionOwner(competition, req.organizer.id, req.organizer.role);
 
     const runner = await RunnerModel.create({
       competitionId: competition._id,
@@ -174,7 +178,7 @@ export const registerRunner = async (req: Request, res: Response, next: NextFunc
   }
 };
 
-export const registerCurrentRunnerForCompetition = async (
+const registerCurrentRunnerForCompetition = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -188,6 +192,7 @@ export const registerCurrentRunnerForCompetition = async (
     const existingRegistration = await RunnerModel.findOne({
       competitionId: competition._id,
       runnerAccountId: req.runnerAccount.id,
+      deletedAt: null,
     });
 
     if (existingRegistration) {
@@ -209,7 +214,7 @@ export const registerCurrentRunnerForCompetition = async (
   }
 };
 
-export const listCurrentRunnerRegistrations = async (
+const listCurrentRunnerRegistrations = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -221,6 +226,7 @@ export const listCurrentRunnerRegistrations = async (
 
     const registrations = await RunnerModel.find({
       runnerAccountId: req.runnerAccount.id,
+      deletedAt: null,
     }).sort({ createdAt: 1 });
 
     const competitionIds = registrations.map((registration) => registration.competitionId);
@@ -240,7 +246,7 @@ export const listCurrentRunnerRegistrations = async (
   }
 };
 
-export const updateRunner = async (req: Request, res: Response, next: NextFunction) => {
+const updateRunner = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.organizer) {
       throw new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som arrangör");
@@ -250,7 +256,7 @@ export const updateRunner = async (req: Request, res: Response, next: NextFuncti
     const competition = await getCompetitionOrThrow(runner.competitionId.toString());
     const validatedBody = req.validatedBody as ValidatedRunnerBody;
 
-    requireCompetitionOwner(competition, req.organizer.id);
+    requireCompetitionOwner(competition, req.organizer.id, req.organizer.role);
 
     runner.firstName = validatedBody.firstName;
     runner.lastName = validatedBody.lastName;
@@ -265,7 +271,7 @@ export const updateRunner = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-export const deleteRunner = async (req: Request, res: Response, next: NextFunction) => {
+const deleteRunner = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.organizer) {
       throw new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som arrangör");
@@ -274,12 +280,27 @@ export const deleteRunner = async (req: Request, res: Response, next: NextFuncti
     const runner = await getRunnerOrThrow(getRouteParam(req.params.id));
     const competition = await getCompetitionOrThrow(runner.competitionId.toString());
 
-    requireCompetitionOwner(competition, req.organizer.id);
+    requireCompetitionOwner(competition, req.organizer.id, req.organizer.role);
 
-    await runner.deleteOne();
+    runner.deletedAt = new Date();
+    await runner.save();
 
     return res.status(204).send();
   } catch (error) {
     return next(error);
   }
+};
+
+export {
+  deleteRunner,
+  getCurrentRunner,
+  getRunnerById,
+  listCompetitionRunners,
+  listCurrentRunnerRegistrations,
+  listRunners,
+  loginRunner,
+  registerCurrentRunnerForCompetition,
+  registerRunner,
+  registerRunnerAccount,
+  updateRunner,
 };

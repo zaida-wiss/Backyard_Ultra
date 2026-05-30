@@ -1,12 +1,11 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-export const connectToDatabase = async () => {
-  const mongoUri = process.env.MONGO_URI;
+import { config } from "./env.js";
+import { logger } from "../utils/logger.js";
 
-  if (!mongoUri) {
-    throw new Error('MONGO_URI saknas i miljövariablerna');
-  }
-
-  await mongoose.connect(mongoUri);
-  console.log('Ansluten till MongoDB');
+const connectToDatabase = async () => {
+  await mongoose.connect(config.mongoUri);
+  logger.info({}, "Ansluten till MongoDB");
 };
+
+export { connectToDatabase };

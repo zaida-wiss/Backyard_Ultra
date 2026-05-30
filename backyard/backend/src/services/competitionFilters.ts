@@ -1,5 +1,5 @@
-import type { Competition } from "../types/domain";
-import type { CompetitionFilters } from "../schemas/competitionFiltersSchema";
+import type { Competition } from "../types/domain.js";
+import type { CompetitionFilters } from "../schemas/competitionFiltersSchema.js";
 
 type CompetitionFilterRule = {
   isActive: (filters: CompetitionFilters) => boolean;

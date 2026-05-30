@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { parseCompetitionFilters } from "../schemas/competitionFiltersSchema";
+import { parseCompetitionFilters } from "../schemas/competitionFiltersSchema.js";
 
 export const parseCompetitionFiltersHandler = async (
   req: Request,

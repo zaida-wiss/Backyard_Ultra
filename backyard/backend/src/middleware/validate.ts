@@ -2,18 +2,21 @@ import type { NextFunction, Request, Response } from "express";
 import {
   parseLogin,
   parseOrganizerRegistration,
-} from "../schemas/organizerSchema";
-import { parseCompetition } from "../schemas/competitionSchema";
+} from "../schemas/organizerSchema.js";
+import { parseCompetition } from "../schemas/competitionSchema.js";
 import {
   parseRunner,
   parseRunnerAccountRegistration,
-} from "../schemas/runnerSchema";
+} from "../schemas/runnerSchema.js";
+import { parseObjectIdParams } from "../schemas/paramSchema.js";
 
 type BodyParser = (body: unknown) => unknown;
+type ParamsParser = (params: Record<string, unknown>) => unknown;
 
 const validateBody = (parser: BodyParser) => {
   return async (req: Request, _res: Response, next: NextFunction) => {
     try {
+      // Parsern returnerar en tryggare version av body. Controllern slipper läsa rå req.body.
       req.validatedBody = parser(req.body);
       return next();
     } catch (err) {
@@ -22,12 +25,42 @@ const validateBody = (parser: BodyParser) => {
   };
 };
 
-export const validateOrganizerRegistration = validateBody(parseOrganizerRegistration);
+const validateParams = (parser: ParamsParser) => {
+  return async (req: Request, _res: Response, next: NextFunction) => {
+    try {
+      // Params kommer alltid som text från URL:en, men parsern kontrollerar att formatet är rätt.
+      req.params = parser(req.params) as Record<string, string>;
+      return next();
+    } catch (err) {
+      return next(err);
+    }
+  };
+};
 
-export const validateLogin = validateBody(parseLogin);
+// Vanlig route-param: /:id
+const validateIdParam = validateParams((params) => parseObjectIdParams(params, ["id"]));
 
-export const validateCompetition = validateBody(parseCompetition);
+// Tävlingens runner-routes använder /:competitionId/runners i stället för /:id.
+const validateCompetitionIdParam = validateParams((params) => {
+  return parseObjectIdParams(params, ["competitionId"]);
+});
 
-export const validateRunner = validateBody(parseRunner);
+const validateOrganizerRegistration = validateBody(parseOrganizerRegistration);
 
-export const validateRunnerAccountRegistration = validateBody(parseRunnerAccountRegistration);
+const validateLogin = validateBody(parseLogin);
+
+const validateCompetition = validateBody(parseCompetition);
+
+const validateRunner = validateBody(parseRunner);
+
+const validateRunnerAccountRegistration = validateBody(parseRunnerAccountRegistration);
+
+export {
+  validateCompetition,
+  validateCompetitionIdParam,
+  validateIdParam,
+  validateLogin,
+  validateOrganizerRegistration,
+  validateRunner,
+  validateRunnerAccountRegistration,
+};

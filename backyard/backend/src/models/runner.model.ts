@@ -26,6 +26,7 @@ const runnerSchema = new Schema(
       enum: ["registered"],
       default: "registered",
     },
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true },
 );
@@ -36,6 +37,7 @@ runnerSchema.index(
     unique: true,
     partialFilterExpression: {
       runnerAccountId: { $type: "objectId" },
+      deletedAt: null,
     },
   },
 );
@@ -46,6 +48,7 @@ runnerSchema.index(
     unique: true,
     partialFilterExpression: {
       email: { $type: "string" },
+      deletedAt: null,
     },
   },
 );
@@ -65,6 +68,7 @@ export const toRunnerResponse = (runner: RunnerDocument) => {
     email: runner.email ?? null,
     club: runner.club ?? null,
     status: runner.status,
+    deletedAt: runner.deletedAt?.toISOString() ?? null,
     createdAt: runner.createdAt.toISOString(),
     updatedAt: runner.updatedAt.toISOString(),
   };

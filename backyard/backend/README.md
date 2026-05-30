@@ -2,6 +2,12 @@
 
 Express-backend for arrangorer, tavlingar och lopare.
 
+Se även:
+
+- `../../docs/README.md`
+- `../../docs/api-floden.md`
+- `../../docs/gdpr-loggning.md`
+
 ## Starta
 
 ```bash
@@ -188,6 +194,14 @@ Alla explicita fel returneras i samma format:
 
 - `routes/` bestammer URL och middleware.
 - `controllers/` hanterar request och response.
-- `models/` skapar objektens form.
-- `middleware/` innehaller auth, validering och felhantering.
-- `data/store.js` ar tillfallig in-memory-lagring och kan senare bytas mot databas.
+- `models/` beskriver MongoDB-dokument med Mongoose.
+- `schemas/` validerar inkommande data.
+- `middleware/` innehaller auth, RBAC, validering, loggning och felhantering.
+- `config/` samlar miljo- och databasinstallningar.
+- `utils/` innehaller sma hjalpmoduler som JWT och logger.
+
+## Loggning Och GDPR
+
+- Request-loggning sker med Pino och pino-http.
+- Lösenord, tokens och request body ska inte loggas.
+- Anmälningar använder soft delete med `deletedAt`.

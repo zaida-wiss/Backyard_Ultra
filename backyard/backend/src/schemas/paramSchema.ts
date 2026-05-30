@@ -1,16 +1,26 @@
 import { Types } from "mongoose";
-import HttpError from "../errors/httpError";
+import HttpError from "../errors/httpError.js";
 
-export type IdParams = {
-  id: string;
-};
+type ObjectIdParams = Record<string, string>;
 
-export const parseIdParam = (params: Record<string, unknown>): IdParams => {
-  const id = params.id;
+const parseObjectIdParams = (
+  params: Record<string, unknown>,
+  fieldNames: string[],
+): ObjectIdParams => {
+  const parsedParams: ObjectIdParams = {};
 
-  if (typeof id !== "string" || !Types.ObjectId.isValid(id)) {
-    throw new HttpError(400, "BAD_REQUEST", "id måste vara ett giltigt MongoDB-id");
+  for (const fieldName of fieldNames) {
+    const id = params[fieldName];
+
+    if (typeof id !== "string" || !Types.ObjectId.isValid(id)) {
+      throw new HttpError(400, "BAD_REQUEST", `${fieldName} måste vara ett giltigt MongoDB-id`);
+    }
+
+    parsedParams[fieldName] = id;
   }
 
-  return { id };
+  return parsedParams;
 };
+
+export type { ObjectIdParams };
+export { parseObjectIdParams };

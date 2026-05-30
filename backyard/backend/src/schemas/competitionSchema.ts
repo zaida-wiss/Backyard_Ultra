@@ -1,6 +1,6 @@
-import type { CreateCompetitionInput } from "../types/domain";
-import HttpError from "../errors/httpError";
-import { isDateTimeLocal, requireText, toRequestBody } from "./validationHelpers";
+import type { CreateCompetitionInput } from "../types/domain.js";
+import HttpError from "../errors/httpError.js";
+import { isDateTimeLocal, requireText, toRequestBody } from "./validationHelpers.js";
 
 export type ValidatedCompetitionBody = Omit<CreateCompetitionInput, "organizerId">;
 

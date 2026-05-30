@@ -5,12 +5,12 @@ import { after, before, describe, it } from "node:test";
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
-import app from "../app";
-import { CompetitionModel } from "../models/competition.model";
-import { OrganizerModel } from "../models/organizer.model";
-import { RunnerModel } from "../models/runner.model";
-import { RunnerAccountModel } from "../models/runnerAccount.model";
-import { hashPassword } from "../utils/security";
+import app from "../app.js";
+import { CompetitionModel } from "../models/competition.model.js";
+import { OrganizerModel } from "../models/organizer.model.js";
+import { RunnerModel } from "../models/runner.model.js";
+import { RunnerAccountModel } from "../models/runnerAccount.model.js";
+import { hashPassword } from "../utils/jwt.js";
 
 let mongoServer: MongoMemoryServer;
 let server: Server;

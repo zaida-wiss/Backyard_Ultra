@@ -1,26 +1,27 @@
 import cors from "cors";
 import express from "express";
-import morgan from "morgan";
 
-import competitionsRouter from "./routes/competitions-route";
-import organizersRouter from "./routes/organizers-route";
-import runnersRouter from "./routes/runners-route";
-import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+import competitionsRouter from "./routes/competitions-route.js";
+import organizersRouter from "./routes/organizers-route.js";
+import runnersRouter from "./routes/runners-route.js";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+import { requestLogger } from "./middleware/requestLogger.js";
+import { config } from "./config/env.js";
 
 const app = express();
 
 // Middleware-kedjan körs i ordning uppifrån och ner.
 // CORS tillåter frontend (annan origin/port) att anropa API:t.
-app.use(cors());
+app.use(cors({ origin: config.corsOrigin }));
 // Gör JSON i request body tillgänglig via req.body.
 app.use(express.json());
-// Loggar varje HTTP-anrop i terminalen (metod, route, status, tid).
-app.use(morgan('dev'));
+// Loggar metod, route, status och användare utan body, lösenord eller token.
+app.use(requestLogger);
 
 // Monterar API-resurser under /api/v1.
-app.use('/api/v1/organizers', organizersRouter);
-app.use('/api/v1/competitions', competitionsRouter);
-app.use('/api/v1/runners', runnersRouter);
+app.use("/api/v1/organizers", organizersRouter);
+app.use("/api/v1/competitions", competitionsRouter);
+app.use("/api/v1/runners", runnersRouter);
 
 // Fallback för okända routes (om ingen route ovan matchar).
 app.use(notFoundHandler);

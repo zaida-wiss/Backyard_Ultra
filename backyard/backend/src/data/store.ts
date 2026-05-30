@@ -1,4 +1,4 @@
-import type { Competition, Organizer, Runner, RunnerAccount } from "../types/domain";
+import type { Competition, Organizer, Runner, RunnerAccount } from "../types/domain.js";
 
 // Legacy in-memory store kept only as a reference while learning.
 // The API controllers now use MongoDB through Mongoose models instead.

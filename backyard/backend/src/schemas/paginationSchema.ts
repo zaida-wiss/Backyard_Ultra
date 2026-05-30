@@ -1,4 +1,4 @@
-import HttpError from "../errors/httpError";
+import HttpError from "../errors/httpError.js";
 
 export type Pagination = {
   page: number;
