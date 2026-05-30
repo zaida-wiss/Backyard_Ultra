@@ -15,6 +15,12 @@ const organizerSchema = new Schema(
       lowercase: true,
       trim: true,
     },
+    role: {
+      type: String,
+      enum: ["admin", "organizer"],
+      default: "organizer",
+      required: true,
+    },
     passwordHash: { type: String, required: true },
   },
   { timestamps: true },

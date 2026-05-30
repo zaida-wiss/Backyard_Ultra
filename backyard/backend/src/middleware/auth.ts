@@ -5,6 +5,8 @@ import { OrganizerModel, toPublicOrganizer } from "../models/organizer.model";
 import { RunnerAccountModel, toPublicRunnerAccount } from "../models/runnerAccount.model";
 import { verifyToken } from "../utils/security";
 import type { TokenPayload } from "../types/domain";
+import type { AuthRole } from "../types/domain";
+
 
 const getBearerToken = (req: Request) => {
   const header = req.headers.authorization;
@@ -77,4 +79,20 @@ export const requireRunnerAuth = async (req: Request, _res: Response, next: Next
   } catch (error) {
     return next(error);
   }
+};
+
+export const requireRole = (...allowedRoles: AuthRole[]) => {
+  return async (req: Request, _res: Response, next: NextFunction) => {
+    try {
+      const userRole = req.authUser?.role;
+
+      if (!userRole || !allowedRoles.includes(userRole)) {
+        throw new HttpError(403, "FORBIDDEN", "Du saknar behörighet");
+      }
+
+      return next();
+    } catch (error) {
+      return next(error);
+    }
+  };
 };

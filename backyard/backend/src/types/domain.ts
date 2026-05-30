@@ -81,7 +81,13 @@ export type CreateRunnerInput = {
   club?: string | null;
 };
 
-export type AuthRole = "organizer" | "runner";
+export type AuthRole = "admin" | "organizer" | "runner";
+
+export type AuthUser = {
+  id: string;
+  email: string;
+  role: AuthRole;
+};
 
 export type TokenPayload = {
   sub: string;
