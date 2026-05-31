@@ -14,6 +14,9 @@ import { buildCompetitionQuery } from "../services/competitionQuery.js";
 import type { AuthRole } from "../types/domain.js";
 
 const toDatabaseDate = (dateTimeLocal: string) => new Date(`${dateTimeLocal}:00.000Z`);
+const toOptionalDatabaseDate = (dateTimeLocal: string | null) => {
+  return dateTimeLocal ? toDatabaseDate(dateTimeLocal) : null;
+};
 
 const getRouteParam = (value: string | string[]) => {
   return Array.isArray(value) ? value[0] : value;
@@ -107,7 +110,7 @@ const createCompetitionForOrganizer = async (
       type: validatedBody.type,
       place: validatedBody.place,
       startAt: toDatabaseDate(validatedBody.startAt),
-      endAt: toDatabaseDate(validatedBody.endAt),
+      endAt: toOptionalDatabaseDate(validatedBody.endAt),
     });
 
     return res.status(201).json(toCompetitionResponse(competition));
@@ -131,7 +134,7 @@ const updateCompetition = async (req: Request, res: Response, next: NextFunction
     competition.type = validatedBody.type;
     competition.place = validatedBody.place;
     competition.startAt = toDatabaseDate(validatedBody.startAt);
-    competition.endAt = toDatabaseDate(validatedBody.endAt);
+    competition.endAt = toOptionalDatabaseDate(validatedBody.endAt);
 
     await competition.save();
 

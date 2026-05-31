@@ -15,6 +15,21 @@ export type Organizer = {
   email: string;
   role: "admin" | "organizer";
   createdAt: string;
+  updatedAt?: string;
+};
+
+export type AuthRole = "user" | "admin" | "organizer" | "runner";
+
+export type UserAccount = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  club: string | null;
+  organizerName: string | null;
+  roles: AuthRole[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type RunnerAccount = {
@@ -24,23 +39,15 @@ export type RunnerAccount = {
   email: string;
   club: string | null;
   createdAt: string;
+  updatedAt?: string;
 };
 
-export type AuthRole = "organizer" | "runner";
-
-export type OrganizerAuthResponse = {
-  role: "organizer";
-  organizer: Organizer;
+export type AuthResponse = {
+  user: UserAccount;
+  runner: RunnerAccount | null;
+  organizer: Organizer | null;
   token: string;
 };
-
-export type RunnerAuthResponse = {
-  role: "runner";
-  runner: RunnerAccount;
-  token: string;
-};
-
-export type AuthResponse = OrganizerAuthResponse | RunnerAuthResponse;
 
 export type Competition = {
   id: string;
@@ -49,7 +56,7 @@ export type Competition = {
   type: string;
   place: string;
   startAt: string;
-  endAt: string;
+  endAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -77,5 +84,5 @@ export type CreateCompetitionData = {
   type: string;
   place: string;
   startAt: string;
-  endAt: string;
+  endAt: string | null;
 };

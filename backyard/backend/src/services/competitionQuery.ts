@@ -9,6 +9,13 @@ type DateRangeQuery = {
   $lte?: Date;
 };
 
+type ActiveOnDateQuery = {
+  $or: [
+    { endAt: { $gte: Date } },
+    { endAt: null },
+  ];
+};
+
 const toDatabaseDate = (dateTimeLocal: string) => new Date(`${dateTimeLocal}:00.000Z`);
 
 const addOrganizerFilter = (
@@ -77,7 +84,10 @@ const addActiveOnDateFilter = (
   }
 
   addDateBoundary(query, "startAt", "$lte", new Date(`${date}T23:59:59.999Z`));
-  addDateBoundary(query, "endAt", "$gte", new Date(`${date}T00:00:00.000Z`));
+  query.$or = [
+    { endAt: { $gte: new Date(`${date}T00:00:00.000Z`) } },
+    { endAt: null },
+  ] satisfies ActiveOnDateQuery["$or"];
 };
 
 export const buildCompetitionQuery = (

@@ -14,7 +14,7 @@ const runnerSchema = new Schema(
     },
     runnerAccountId: {
       type: Schema.Types.ObjectId,
-      ref: "RunnerAccount",
+      ref: "User",
       default: null,
     },
     firstName: { type: String, required: true, trim: true },

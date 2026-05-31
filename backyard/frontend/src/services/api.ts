@@ -53,8 +53,7 @@ export async function registerOrganizer(data: {
     body: JSON.stringify(data),
   });
 
-  const body = await parseResponse<Omit<AuthResponse, "role">>(response);
-  return { ...body, role: "organizer" } as AuthResponse;
+  return parseResponse<AuthResponse>(response);
 }
 
 export async function loginOrganizer(data: {
@@ -67,8 +66,7 @@ export async function loginOrganizer(data: {
     body: JSON.stringify(data),
   });
 
-  const body = await parseResponse<Omit<AuthResponse, "role">>(response);
-  return { ...body, role: "organizer" } as AuthResponse;
+  return parseResponse<AuthResponse>(response);
 }
 
 export async function registerRunner(data: {
@@ -84,8 +82,7 @@ export async function registerRunner(data: {
     body: JSON.stringify(data),
   });
 
-  const body = await parseResponse<Omit<AuthResponse, "role">>(response);
-  return { ...body, role: "runner" } as AuthResponse;
+  return parseResponse<AuthResponse>(response);
 }
 
 export async function loginRunner(data: {
@@ -98,8 +95,23 @@ export async function loginRunner(data: {
     body: JSON.stringify(data),
   });
 
-  const body = await parseResponse<Omit<AuthResponse, "role">>(response);
-  return { ...body, role: "runner" } as AuthResponse;
+  return parseResponse<AuthResponse>(response);
+}
+
+export async function becomeOrganizer(
+  token: string,
+  data: { name: string },
+): Promise<AuthResponse> {
+  const response = await fetch(`${API_BASE_URL}/organizers/me`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  return parseResponse<AuthResponse>(response);
 }
 
 export async function createCompetition(

@@ -5,9 +5,12 @@ import HttpError from "../errors/httpError.js";
 import { CompetitionModel, toCompetitionResponse } from "../models/competition.model.js";
 import { RunnerModel, type RunnerDocument, toRunnerResponse } from "../models/runner.model.js";
 import {
-  RunnerAccountModel,
-  toPublicRunnerAccount,
-} from "../models/runnerAccount.model.js";
+  hasRole,
+  toOrganizerAccount,
+  toPublicUser,
+  toRunnerAccount,
+  UserModel,
+} from "../models/user.model.js";
 import type { LoginBody } from "../schemas/organizerSchema.js";
 import type {
   RunnerAccountRegistrationBody,
@@ -102,23 +105,26 @@ const registerRunnerAccount = async (
 ) => {
   try {
     const { firstName, lastName, email, password, club } = req.validatedBody as RunnerAccountRegistrationBody;
-    const existingRunner = await RunnerAccountModel.findOne({ email });
+    const existingRunner = await UserModel.findOne({ email });
 
     if (existingRunner) {
       throw new HttpError(409, "EMAIL_ALREADY_EXISTS", "Ett löparkonto med den e-posten finns redan");
     }
 
-    const runnerAccount = await RunnerAccountModel.create({
+    const runnerAccount = await UserModel.create({
       firstName,
       lastName,
       email,
       club,
+      roles: ["user", "runner"],
       passwordHash: await hashPassword(password),
     });
 
     return res.status(201).json({
-      runner: toPublicRunnerAccount(runnerAccount),
-      token: createToken({ id: runnerAccount.id, email: runnerAccount.email }, "runner"),
+      user: toPublicUser(runnerAccount),
+      runner: toRunnerAccount(runnerAccount),
+      organizer: null,
+      token: createToken({ id: runnerAccount.id, email: runnerAccount.email }, runnerAccount.roles),
     });
   } catch (error) {
     return next(error);
@@ -128,15 +134,19 @@ const registerRunnerAccount = async (
 const loginRunner = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.validatedBody as LoginBody;
-    const runnerAccount = await RunnerAccountModel.findOne({ email });
+    const runnerAccount = await UserModel.findOne({ email });
 
     if (!runnerAccount || !(await verifyPassword(password, runnerAccount.passwordHash))) {
       throw new HttpError(401, "INVALID_CREDENTIALS", "Fel email eller lösenord");
     }
 
     return res.json({
-      runner: toPublicRunnerAccount(runnerAccount),
-      token: createToken({ id: runnerAccount.id, email: runnerAccount.email }, "runner"),
+      user: toPublicUser(runnerAccount),
+      runner: toRunnerAccount(runnerAccount),
+      organizer: hasRole(runnerAccount, "organizer") || hasRole(runnerAccount, "admin")
+        ? toOrganizerAccount(runnerAccount)
+        : null,
+      token: createToken({ id: runnerAccount.id, email: runnerAccount.email }, runnerAccount.roles),
     });
   } catch (error) {
     return next(error);

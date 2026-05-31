@@ -110,10 +110,11 @@ Skapa eller uppdatera tavling:
   "name": "Skogsglantans Backyard Ultra",
   "type": "Backyard Ultra",
   "place": "Umea",
-  "startAt": "2026-06-13T10:00",
-  "endAt": "2026-06-14T18:00"
+  "startAt": "2026-06-13T10:00"
 }
 ```
+
+`endAt` kan skickas med nar sluttiden ar kand, men ar valfri.
 
 `POST`, `PUT` och `DELETE` kraver:
 
@@ -184,7 +185,7 @@ Alla explicita fel returneras i samma format:
 {
   "error": {
     "code": "BAD_REQUEST",
-    "message": "startAt och endAt maste skrivas som YYYY-MM-DDTHH:mm",
+    "message": "startAt maste skrivas som YYYY-MM-DDTHH:mm",
     "status": 400
   }
 }

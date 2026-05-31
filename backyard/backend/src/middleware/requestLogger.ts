@@ -10,7 +10,7 @@ const requestLogger = pinoHttp<Request, Response>({
   customProps: (req) => {
     return {
       userId: req.authUser?.id ?? null,
-      role: req.authUser?.role ?? null,
+      roles: req.authUser?.roles ?? null,
     };
   },
   customLogLevel: (_req, res, error) => {

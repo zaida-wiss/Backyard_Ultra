@@ -28,6 +28,11 @@
   font-size: 0.95rem;
 }
 
+.header__session small {
+  color: #b9d2c0;
+  font-size: 0.75rem;
+}
+
 .header__icon-button {
   display: inline-flex;
   align-items: center;

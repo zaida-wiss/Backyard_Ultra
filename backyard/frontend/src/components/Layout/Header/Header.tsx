@@ -9,11 +9,10 @@ type HeaderProps = {
 
 
 export default function Header({ session, onLogout }: HeaderProps) {
-  const displayName = session?.role === "organizer"
-    ? session.organizer.name
-    : session
-      ? `${session.runner.firstName} ${session.runner.lastName}`
-      : "";
+  const displayName = session
+    ? `${session.user.firstName} ${session.user.lastName}`
+    : "";
+  const roles = session?.user.roles.join(", ") ?? "";
 
   return (
     <header className="header">
@@ -22,6 +21,7 @@ export default function Header({ session, onLogout }: HeaderProps) {
       {session ? (
         <div className="header__session">
           <span>{displayName}</span>
+          <small>{roles}</small>
           <button
             type="button"
             className="header__icon-button"

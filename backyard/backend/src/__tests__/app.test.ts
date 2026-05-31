@@ -7,9 +7,8 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 
 import app from "../app.js";
 import { CompetitionModel } from "../models/competition.model.js";
-import { OrganizerModel } from "../models/organizer.model.js";
 import { RunnerModel } from "../models/runner.model.js";
-import { RunnerAccountModel } from "../models/runnerAccount.model.js";
+import { UserModel } from "../models/user.model.js";
 import { hashPassword } from "../utils/jwt.js";
 
 let mongoServer: MongoMemoryServer;
@@ -50,9 +49,12 @@ describe("competition backend flow", () => {
     mongoServer = await MongoMemoryServer.create();
     await mongoose.connect(mongoServer.getUri());
 
-    const organizer = await OrganizerModel.create({
-      name: "Backyard Ultra Sverige",
+    const organizer = await UserModel.create({
+      firstName: "Backyard Ultra",
+      lastName: "Sverige",
       email: "arrangor@example.com",
+      organizerName: "Backyard Ultra Sverige",
+      roles: ["user", "runner", "organizer"],
       passwordHash: await hashPassword("password123"),
     });
     seededOrganizerId = organizer.id;
@@ -85,9 +87,8 @@ describe("competition backend flow", () => {
   after(async () => {
     await closeServer();
     await RunnerModel.deleteMany({});
-    await RunnerAccountModel.deleteMany({});
     await CompetitionModel.deleteMany({});
-    await OrganizerModel.deleteMany({});
+    await UserModel.deleteMany({});
     await mongoose.disconnect();
     await mongoServer.stop();
   });
@@ -115,7 +116,6 @@ describe("competition backend flow", () => {
         type: "Backyard Ultra",
         place: "Stockholm",
         startAt: "2026-08-01T09:00",
-        endAt: "2026-08-02T17:00",
       }),
     });
 
@@ -123,6 +123,7 @@ describe("competition backend flow", () => {
     const competition = await competitionResponse.json();
     assert.equal(competition.place, "Stockholm");
     assert.equal(competition.startAt, "2026-08-01T09:00");
+    assert.equal(competition.endAt, null);
 
     const runnerResponse = await request(`/api/v1/competitions/${competition.id}/runners`, {
       method: "POST",
@@ -143,7 +144,7 @@ describe("competition backend flow", () => {
     assert.equal(runner.firstName, "Zaid");
   });
 
-  it("returns a clear validation error when competition times are missing", async () => {
+  it("returns a clear validation error when competition start time is missing", async () => {
     const loginResponse = await request("/api/v1/organizers/login", {
       method: "POST",
       body: JSON.stringify({

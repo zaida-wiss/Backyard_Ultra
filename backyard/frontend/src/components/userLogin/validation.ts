@@ -1,10 +1,9 @@
 import { z } from "zod";
-import type { AuthRole } from "../../types/types";
 
 export type FieldErrors = {
-  userName: string;
   firstName: string;
   lastName: string;
+  organizerName: string;
   email: string;
   confirmEmail: string;
   password: string;
@@ -12,10 +11,11 @@ export type FieldErrors = {
 };
 
 export type AuthFormData = {
-  userName: string;
   firstName: string;
   lastName: string;
   club: string;
+  wantsOrganizer: boolean;
+  organizerName: string;
   email: string;
   confirmEmail: string;
   password: string;
@@ -23,14 +23,13 @@ export type AuthFormData = {
 };
 
 type AuthFormOptions = {
-  authRole: AuthRole;
   isRegisterMode: boolean;
 };
 
 const emptyFieldErrors: FieldErrors = {
-  userName: "",
   firstName: "",
   lastName: "",
+  organizerName: "",
   email: "",
   confirmEmail: "",
   password: "",
@@ -38,12 +37,6 @@ const emptyFieldErrors: FieldErrors = {
 };
 
 // Små fältscheman återanvänds i större objekt. Det håller reglerna samlade.
-const userNameSchema = z
-  .string()
-  .trim()
-  .min(1, "Namn krävs")
-  .min(5, "Användarnamnet måste innehålla minst 5 bokstäver");
-
 const nameSchema = (fieldName: string) => {
   return z.string().trim().min(1, `${fieldName} krävs`);
 };
@@ -92,27 +85,34 @@ const addConfirmationIssues = (
   }
 };
 
-// Register-scheman bygger vidare på login-schemat så vi slipper duplicera email/lösenord.
-const organizerRegisterSchema = loginSchema.extend({
-  confirmEmail: z.string(),
-  confirmPassword: z.string(),
-  userName: userNameSchema,
-}).superRefine(addConfirmationIssues);
-
-const runnerRegisterSchema = loginSchema.extend({
+// Register-schemat bygger vidare på login-schemat så vi slipper duplicera email/lösenord.
+const registerBaseSchema = loginSchema.extend({
   confirmEmail: z.string(),
   confirmPassword: z.string(),
   firstName: nameSchema("Förnamn"),
   lastName: nameSchema("Efternamn"),
+  club: z.string(),
+  wantsOrganizer: z.boolean(),
+  organizerName: z.string().trim(),
 }).superRefine(addConfirmationIssues);
 
-const getSchema = ({ authRole, isRegisterMode }: AuthFormOptions) => {
+const registerSchema = registerBaseSchema.superRefine((data, ctx) => {
+  if (data.wantsOrganizer && data.organizerName.trim().length === 0) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["organizerName"],
+      message: "Arrangörsnamn krävs när du vill bli arrangör",
+    });
+  }
+});
+
+const getSchema = ({ isRegisterMode }: AuthFormOptions) => {
   // Vilket schema som gäller beror på om användaren loggar in eller registrerar sig.
   if (!isRegisterMode) {
     return loginSchema;
   }
 
-  return authRole === "organizer" ? organizerRegisterSchema : runnerRegisterSchema;
+  return registerSchema;
 };
 
 const validateAuthForm = (

@@ -24,6 +24,14 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
+function formatCompetitionDates(competition: Competition) {
+  if (!competition.endAt) {
+    return `Startar ${formatDateTime(competition.startAt)}`;
+  }
+
+  return `${formatDateTime(competition.startAt)} till ${formatDateTime(competition.endAt)}`;
+}
+
 export default function Dashboard ({ organizer, token }: DashboardProps) {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [competitionForm, setCompetitionForm] = useState<CreateCompetitionData>(initialCompetitionForm);
@@ -128,12 +136,11 @@ export default function Dashboard ({ organizer, token }: DashboardProps) {
             </label>
 
             <label>
-              Till och med
+              Till och med (valfritt)
               <input
                 type="datetime-local"
-                value={competitionForm.endAt}
+                value={competitionForm.endAt ?? ""}
                 onChange={(event) => updateCompetitionField("endAt", event.target.value)}
-                required
               />
             </label>
           </div>
@@ -171,7 +178,7 @@ export default function Dashboard ({ organizer, token }: DashboardProps) {
                     <MapPin size={16} />
                     {competition.place}
                   </p>
-                  <p>{formatDateTime(competition.startAt)} till {formatDateTime(competition.endAt)}</p>
+                  <p>{formatCompetitionDates(competition)}</p>
                 </article>
               ))}
             </div>

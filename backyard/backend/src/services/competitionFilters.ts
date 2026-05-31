@@ -23,7 +23,7 @@ const competitionFilterRules: CompetitionFilterRule[] = [
     isActive: ({ date }) => date !== null,
     matches: (competition, { date }) => (
       competition.startAt.slice(0, 10) <= date!
-      && competition.endAt.slice(0, 10) >= date!
+      && (!competition.endAt || competition.endAt.slice(0, 10) >= date!)
     ),
   },
   {
@@ -35,6 +35,8 @@ const competitionFilterRules: CompetitionFilterRule[] = [
   {
     isActive: ({ endsBefore }) => endsBefore !== null,
     matches: (competition, { endsBefore }) => (
+      competition.endAt !== null
+      &&
       Date.parse(competition.endAt) <= Date.parse(endsBefore!)
     ),
   },

@@ -23,6 +23,21 @@ export type RunnerAccount = {
 
 export type PublicRunnerAccount = Omit<RunnerAccount, "passwordHash">;
 
+export type User = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  passwordHash: string;
+  club: string | null;
+  organizerName: string | null;
+  roles: AuthRole[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PublicUser = Omit<User, "passwordHash">;
+
 export type Competition = {
   id: string;
   organizerId: string;
@@ -30,7 +45,7 @@ export type Competition = {
   type: string;
   place: string;
   startAt: string;
-  endAt: string;
+  endAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -71,7 +86,7 @@ export type CreateCompetitionInput = {
   type: string;
   place: string;
   startAt: string;
-  endAt: string;
+  endAt: string | null;
 };
 
 export type CreateRunnerInput = {
@@ -83,17 +98,17 @@ export type CreateRunnerInput = {
   club?: string | null;
 };
 
-export type AuthRole = "admin" | "organizer" | "runner";
+export type AuthRole = "user" | "admin" | "organizer" | "runner";
 
 export type AuthUser = {
   id: string;
   email: string;
-  role: AuthRole;
+  roles: AuthRole[];
 };
 
 export type TokenPayload = {
   sub: string;
   email: string;
-  role: AuthRole;
+  roles: AuthRole[];
   exp: number;
 };

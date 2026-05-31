@@ -1,16 +1,17 @@
 import { useState, type FormEvent } from "react";
-import { loginOrganizer, loginRunner, registerOrganizer, registerRunner } from "../../services/api";
-import type { AuthResponse, AuthRole } from "../../types/types";
+import { becomeOrganizer, loginRunner, registerRunner } from "../../services/api";
+import type { AuthResponse } from "../../types/types";
 import {
   emptyFieldErrors,
   validateAuthForm,
 } from "./validation";
 
 export type UserData = {
-  userName: string;
   firstName: string;
   lastName: string;
   club: string;
+  wantsOrganizer: boolean;
+  organizerName: string;
   email: string;
   confirmEmail: string;
   password: string;
@@ -18,10 +19,11 @@ export type UserData = {
 };
 
 const initialUser: UserData = {
-  userName: "",
   firstName: "",
   lastName: "",
   club: "",
+  wantsOrganizer: false,
+  organizerName: "",
   email: "",
   confirmEmail: "",
   password: "",
@@ -35,7 +37,6 @@ type UseUserLoginFormProps = {
 export function useUserLoginForm({ onAuthSuccess }: UseUserLoginFormProps) {
   const [error, setError] = useState("");
   const [isRegisterMode, setIsRegisterMode] = useState(false);
-  const [authRole, setAuthRole] = useState<AuthRole>("organizer");
   const [user, setUser] = useState<UserData>(initialUser);
   const [fieldErrors, setFieldErrors] = useState(emptyFieldErrors);
   const [success, setSuccess] = useState(false);
@@ -44,10 +45,9 @@ export function useUserLoginForm({ onAuthSuccess }: UseUserLoginFormProps) {
   const hasFieldErrors = Object.values(fieldErrors).some(Boolean);
   const isFormBlocked = hasFieldErrors || isSubmitting;
 
-  function getFieldErrors(nextUser: UserData, nextRole = authRole, nextMode = isRegisterMode) {
+  function getFieldErrors(nextUser: UserData, nextMode = isRegisterMode) {
     // Hela formulärobjektet valideras varje gång, så fält som beror på varandra hänger ihop.
     return validateAuthForm(nextUser, {
-      authRole: nextRole,
       isRegisterMode: nextMode,
     });
   }
@@ -65,16 +65,7 @@ export function useUserLoginForm({ onAuthSuccess }: UseUserLoginFormProps) {
 
   function handleRegisterModeChange(nextMode: boolean) {
     setIsRegisterMode(nextMode);
-    setFieldErrors(getFieldErrors(user, authRole, nextMode));
-  }
-
-  function handleAuthRoleChange(nextRole: AuthRole) {
-    setAuthRole(nextRole);
-    setFieldErrors(getFieldErrors(user, nextRole, isRegisterMode));
-  }
-
-  function handleUserNameChange(value: string) {
-    updateField("userName", value);
+    setFieldErrors(getFieldErrors(user, nextMode));
   }
 
   function handleFirstNameChange(value: string) {
@@ -87,6 +78,14 @@ export function useUserLoginForm({ onAuthSuccess }: UseUserLoginFormProps) {
 
   function handleClubChange(value: string) {
     updateField("club", value);
+  }
+
+  function handleWantsOrganizerChange(value: boolean) {
+    updateField("wantsOrganizer", value);
+  }
+
+  function handleOrganizerNameChange(value: string) {
+    updateField("organizerName", value);
   }
 
   function handleEmailChange(value: string) {
@@ -127,29 +126,25 @@ export function useUserLoginForm({ onAuthSuccess }: UseUserLoginFormProps) {
       setError("");
       setIsSubmitting(true);
 
-      const auth = authRole === "organizer"
-        ? isRegisterMode
-          ? await registerOrganizer({
-              name: user.userName,
-              email: user.email,
-              password: user.password,
-            })
-          : await loginOrganizer({
-              email: user.email,
-              password: user.password,
-            })
-        : isRegisterMode
-          ? await registerRunner({
-              firstName: user.firstName,
-              lastName: user.lastName,
-              email: user.email,
-              password: user.password,
-              club: user.club || null,
-            })
-          : await loginRunner({
-              email: user.email,
-              password: user.password,
-            });
+      let auth = isRegisterMode
+        ? await registerRunner({
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            password: user.password,
+            club: user.club || null,
+          })
+        : await loginRunner({
+            email: user.email,
+            password: user.password,
+          });
+
+      if (isRegisterMode && user.wantsOrganizer) {
+        // Samma konto får en extra behörighet. Det skapas alltså inte ett separat arrangörskonto.
+        auth = await becomeOrganizer(auth.token, {
+          name: user.organizerName,
+        });
+      }
 
       setSuccess(true);
       onAuthSuccess(auth);
@@ -167,16 +162,15 @@ export function useUserLoginForm({ onAuthSuccess }: UseUserLoginFormProps) {
     success,
     fieldErrors,
     isRegisterMode,
-    authRole,
     isFormBlocked,
     isSubmitting,
     setIsRegisterMode: handleRegisterModeChange,
-    setAuthRole: handleAuthRoleChange,
     handleSubmit,
-    handleUserNameChange,
     handleFirstNameChange,
     handleLastNameChange,
     handleClubChange,
+    handleWantsOrganizerChange,
+    handleOrganizerNameChange,
     handleEmailChange,
     handleConfirmEmailChange,
     handlePasswordChange,

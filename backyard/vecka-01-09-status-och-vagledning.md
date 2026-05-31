@@ -20,7 +20,7 @@ Kort svar: **projektet har kod eller dokumentation för de centrala momenten fr�
 | 5 | Relationer, filter, testning | Klart nog | `competitionQuery.ts`, `runner.model.ts`, `app.test.ts` |
 | 6 | Validering + felhantering | Klart | `schemas/`, `middleware/validate.ts`, `errorHandler.ts` |
 | 7 | Säkerhet, bcrypt, JWT | Klart | `utils/jwt.ts`, `middleware/auth.ts` |
-| 8 | RBAC + config | Klart | `middleware/auth.ts`, `config/env.ts`, `organizer.model.ts` |
+| 8 | RBAC + config | Klart | `middleware/auth.ts`, `config/env.ts`, `user.model.ts` |
 | 9 | GDPR, loggning, dokumentation | Klart nog | `requestLogger.ts`, `utils/logger.ts`, `docs/api-floden.md`, `docs/gdpr-loggning.md` |
 
 ## Vad Som Finns Nu
@@ -31,8 +31,9 @@ Kort svar: **projektet har kod eller dokumentation för de centrala momenten fr�
 - Frontend-login valideras med Zod.
 - Backend `.env` valideras med Zod i `config/env.ts`.
 - `AUTH_SECRET`, `MONGO_URI`, `PORT` och `CORS_ORIGIN` läses via typad config.
-- JWT innehåller roll och `requireRole(...)` används i skyddade routes.
-- Organizer har roll i databasen (`organizer` eller `admin`).
+- JWT innehåller användarens behörigheter (`roles`) och `requireRole(...)` används i skyddade routes.
+- En användare kan ha flera behörigheter, till exempel `user`, `runner`, `organizer` och `admin`.
+- Endast en admin kan ge admin-behörighet till andra användare.
 - Löparanmälningar har unika index som skyddar mot dubbelanmälan.
 - Löparanmälningar tas bort med soft delete (`deletedAt`) och listas bara när de är aktiva.
 - Request-loggning är strukturerad med Pino och pino-http.
@@ -51,7 +52,7 @@ Kort svar: **projektet har kod eller dokumentation för de centrala momenten fr�
 - [x] Vecka 6: Params valideras via schema/middleware.
 - [x] Vecka 7: bcrypt och JWT används.
 - [x] Vecka 7: Skyddade routes kräver Bearer-token.
-- [x] Vecka 8: roller och `requireRole(...)` finns.
+- [x] Vecka 8: flera roller per användare och `requireRole(...)` finns.
 - [x] Vecka 8: samlad config-fil med Zod-validerad `.env` finns.
 - [x] Vecka 9: strukturerad logger finns med Pino och pino-http.
 - [x] Vecka 9: känslig data undviks/redacteras i loggar.

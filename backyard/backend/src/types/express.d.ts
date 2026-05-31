@@ -1,4 +1,4 @@
-import type { AuthUser, PublicOrganizer, PublicRunnerAccount } from "./domain.js";
+import type { AuthUser, PublicOrganizer, PublicRunnerAccount, PublicUser } from "./domain.js";
 import type { CompetitionFilters } from "../schemas/competitionFiltersSchema.js";
 
 declare global {
@@ -6,6 +6,7 @@ declare global {
     interface Request {
       organizer?: PublicOrganizer;
       runnerAccount?: PublicRunnerAccount;
+      user?: PublicUser;
       authUser?: AuthUser;
       validatedBody?: unknown;
       competitionFilters?: CompetitionFilters;

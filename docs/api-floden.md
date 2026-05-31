@@ -17,10 +17,10 @@ sequenceDiagram
 
   User->>Frontend: Fyller i login-formulär
   Frontend->>Frontend: Validerar med Zod
-  Frontend->>API: POST /api/v1/organizers/login eller /runners/login
+  Frontend->>API: POST /api/v1/runners/login
   API->>DB: Hämtar konto via email
   API->>API: Jämför lösenord med bcrypt
-  API-->>Frontend: JWT med roll
+  API-->>Frontend: JWT med roles-array
 ```
 
 ## Anmälningsflöde
@@ -53,9 +53,25 @@ sequenceDiagram
   Client->>API: Request med Authorization: Bearer token
   API->>Auth: requireAuth eller requireRunnerAuth
   Auth->>Auth: Verifierar JWT
-  Auth->>Auth: Sätter req.authUser
+  Auth->>Auth: Hämtar user och sätter req.authUser.roles
   API->>Auth: requireRole(...)
-  Auth-->>Controller: Släpper vidare om rollen matchar
+  Auth-->>Controller: Släpper vidare om minst en behörighet matchar
+```
+
+## Bli Arrangör-Flöde
+
+```mermaid
+sequenceDiagram
+  participant User as Inloggad användare
+  participant Frontend
+  participant API as Express API
+  participant DB as MongoDB
+
+  User->>Frontend: Väljer att även bli arrangör
+  Frontend->>API: POST /api/v1/organizers/me
+  API->>API: Verifierar JWT
+  API->>DB: Lägger till organizer i user.roles
+  API-->>Frontend: Uppdaterad user, organizer och JWT
 ```
 
 ## Soft Delete-Flöde
@@ -79,6 +95,8 @@ sequenceDiagram
 POST /api/v1/organizers/register
 POST /api/v1/organizers/login
 GET  /api/v1/organizers/me
+POST /api/v1/organizers/me
+PATCH /api/v1/organizers/:id/admin
 
 GET    /api/v1/competitions?page=1&limit=20
 POST   /api/v1/competitions
@@ -106,8 +124,9 @@ GET  /api/v1/runners/me/registrations
 
 ## Roller
 
-Roller beskriver behörighet:
+Roller beskriver behörighet och ligger på `user.roles`, så samma konto kan ha flera roller:
 
+- `user`: basrollen för ett konto.
 - `admin`: kan administrera bredare flöden.
 - `organizer`: kan skapa och hantera tävlingar.
 - `runner`: kan se tävlingar och anmäla sig.

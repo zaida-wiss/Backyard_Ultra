@@ -13,16 +13,15 @@ export function UserLogin ({onAuthSuccess}: UserLoginProps) {
     success,
     fieldErrors,
     isRegisterMode,
-    authRole,
     isFormBlocked,
     isSubmitting,
     setIsRegisterMode,
-    setAuthRole,
     handleSubmit,
-    handleUserNameChange,
     handleFirstNameChange,
     handleLastNameChange,
     handleClubChange,
+    handleWantsOrganizerChange,
+    handleOrganizerNameChange,
     handleEmailChange,
     handleConfirmEmailChange,
     handlePasswordChange,
@@ -32,45 +31,14 @@ export function UserLogin ({onAuthSuccess}: UserLoginProps) {
   return(
     <section className="auth-page">
       <div className="auth-panel">
-        <p className="auth-panel__eyebrow">{authRole === "organizer" ? "Arrangörskonto" : "Löparkonto"}</p>
+        <p className="auth-panel__eyebrow">Användarkonto</p>
         <h1>{isRegisterMode ? "Registrera konto" : "Logga in"}</h1>
-        <div className="auth-role-toggle" aria-label="Välj kontotyp">
-          <button
-            type="button"
-            className={authRole === "organizer" ? "auth-role-toggle__button is-active" : "auth-role-toggle__button"}
-            onClick={() => setAuthRole("organizer")}
-          >
-            Arrangör
-          </button>
-          <button
-            type="button"
-            className={authRole === "runner" ? "auth-role-toggle__button is-active" : "auth-role-toggle__button"}
-            onClick={() => setAuthRole("runner")}
-          >
-            Löpare
-          </button>
-        </div>
         <form className="auth-form" onSubmit={handleSubmit}>
 
           {error && <div className="error">{error}</div>}
           {success && <div className="success">Inloggning lyckades!</div>}
 
-          {isRegisterMode && authRole === "organizer" && (
-            <label>
-              Namn på arrangör
-              <input
-                type="text"
-                placeholder= "Trail AB"
-                value={user.userName}
-                autoFocus
-                onChange={e => handleUserNameChange(e.target.value)}
-              />
-            </label>
-          )}
-
-          {isRegisterMode && authRole === "organizer" && fieldErrors.userName && <div className="field-error">{fieldErrors.userName}</div>}
-
-          {isRegisterMode && authRole === "runner" && (
+          {isRegisterMode && (
             <div className="auth-form__grid">
               <label>
                 Förnamn
@@ -94,10 +62,10 @@ export function UserLogin ({onAuthSuccess}: UserLoginProps) {
             </div>
           )}
 
-          {isRegisterMode && authRole === "runner" && fieldErrors.firstName && <div className="field-error">{fieldErrors.firstName}</div>}
-          {isRegisterMode && authRole === "runner" && fieldErrors.lastName && <div className="field-error">{fieldErrors.lastName}</div>}
+          {isRegisterMode && fieldErrors.firstName && <div className="field-error">{fieldErrors.firstName}</div>}
+          {isRegisterMode && fieldErrors.lastName && <div className="field-error">{fieldErrors.lastName}</div>}
 
-          {isRegisterMode && authRole === "runner" && (
+          {isRegisterMode && (
             <label>
               Klubb
               <input
@@ -108,6 +76,31 @@ export function UserLogin ({onAuthSuccess}: UserLoginProps) {
               />
             </label>
           )}
+
+          {isRegisterMode && (
+            <label className="auth-form__checkbox">
+              <input
+                type="checkbox"
+                checked={user.wantsOrganizer}
+                onChange={e => handleWantsOrganizerChange(e.target.checked)}
+              />
+              Jag vill även kunna lägga upp tävlingar som arrangör
+            </label>
+          )}
+
+          {isRegisterMode && user.wantsOrganizer && (
+            <label>
+              Namn på arrangör
+              <input
+                type="text"
+                placeholder="Trail AB"
+                value={user.organizerName}
+                onChange={e => handleOrganizerNameChange(e.target.value)}
+              />
+            </label>
+          )}
+
+          {isRegisterMode && fieldErrors.organizerName && <div className="field-error">{fieldErrors.organizerName}</div>}
 
           <label>
             Email

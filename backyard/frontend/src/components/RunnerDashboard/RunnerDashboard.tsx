@@ -24,6 +24,14 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
+function formatCompetitionDates(competition: Competition) {
+  if (!competition.endAt) {
+    return `Startar ${formatDateTime(competition.startAt)}`;
+  }
+
+  return `${formatDateTime(competition.startAt)} till ${formatDateTime(competition.endAt)}`;
+}
+
 export default function RunnerDashboard({ runner, token }: RunnerDashboardProps) {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [registrations, setRegistrations] = useState<RunnerRegistrationWithCompetition[]>([]);
@@ -107,7 +115,7 @@ export default function RunnerDashboard({ runner, token }: RunnerDashboardProps)
                     <MapPin size={16} />
                     {competition.place}
                   </p>
-                  <p>{formatDateTime(competition.startAt)} till {formatDateTime(competition.endAt)}</p>
+                  <p>{formatCompetitionDates(competition)}</p>
                   <button
                     type="button"
                     className="competition-card__action"

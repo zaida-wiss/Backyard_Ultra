@@ -85,6 +85,17 @@
   font: inherit;
 }
 
+.auth-form .auth-form__checkbox {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  font-weight: 600;
+}
+
+.auth-form__checkbox input {
+  width: 18px;
+  min-height: 18px;
+}
+
 @media (max-width: 520px) {
   .auth-form__grid {
     grid-template-columns: 1fr;
