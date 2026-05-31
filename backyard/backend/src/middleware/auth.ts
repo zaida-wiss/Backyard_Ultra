@@ -36,6 +36,18 @@ const getUserFromPayload = async (payload: TokenPayload) => {
     throw new HttpError(401, "UNAUTHORIZED", "Användaren finns inte längre");
   }
 
+  if (user.deletedAt) {
+    throw new HttpError(401, "UNAUTHORIZED", "Kontot är raderat");
+  }
+
+  if (user.deletionScheduledAt) {
+    throw new HttpError(
+      401,
+      "ACCOUNT_DELETION_PENDING",
+      "Kontot väntar på radering. Logga in igen för att avbryta raderingen.",
+    );
+  }
+
   return user;
 };
 

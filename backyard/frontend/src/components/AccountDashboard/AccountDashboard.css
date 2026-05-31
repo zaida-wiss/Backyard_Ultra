@@ -21,6 +21,7 @@
 .profile-stats,
 .profile-content-grid,
 .profile-available,
+.profile-privacy,
 .profile-alert,
 .timing-panel {
   width: min(1220px, 100%);
@@ -318,6 +319,7 @@
 
 .profile-available {
   padding: 0 0 30px;
+  margin-bottom: 22px;
 }
 
 .profile-available-grid {
@@ -343,6 +345,31 @@
   font-size: 0.68rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.profile-privacy__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 24px 32px 30px;
+}
+
+.profile-privacy__actions button {
+  min-height: 42px;
+  border: 1px solid rgba(101, 224, 137, 0.26);
+  border-radius: 12px;
+  background: rgba(101, 224, 137, 0.08);
+  color: #65e089;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.profile-privacy__actions button.is-danger {
+  border-color: rgba(224, 112, 112, 0.38);
+  background: rgba(224, 112, 112, 0.1);
+  color: #f0b4b4;
 }
 
 .profile-back-button,

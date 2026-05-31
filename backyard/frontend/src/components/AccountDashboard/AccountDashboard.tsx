@@ -3,10 +3,13 @@ import { MapPin, Timer, Trophy, User } from "lucide-react";
 import {
   becomeOrganizer,
   becomeTimekeeper,
+  downloadMyData,
+  hardDeleteMyAccount,
   listCompetitionRunners,
   listCompetitions,
   listRunnerRegistrations,
   reportRunnerLapTimes,
+  softDeleteMyAccount,
 } from "../../services/api";
 import type {
   AuthResponse,
@@ -150,6 +153,67 @@ export default function AccountDashboard({
       setError(err instanceof Error ? err.message : "Kunde inte uppdatera rollen");
     } finally {
       setIsUpdatingRole(false);
+    }
+  }
+
+  async function handleDownloadMyData() {
+    try {
+      setError("");
+      setMessage("");
+
+      const data = await downloadMyData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = downloadUrl;
+      link.download = `backyard-ultra-data-${session.user.id}.json`;
+      link.click();
+
+      URL.revokeObjectURL(downloadUrl);
+      setMessage("Din data laddades ner som JSON.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Kunde inte ladda ner din data");
+    }
+  }
+
+  async function handleSoftDeleteAccount() {
+    const shouldDelete = window.confirm(
+      "Vill du begära radering av kontot om 30 dagar? Du loggas ut, men raderingen avbryts om du loggar in igen innan dess.",
+    );
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    try {
+      setError("");
+      setMessage("");
+      await softDeleteMyAccount();
+      await onAuthUpdate();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Kunde inte radera kontot");
+    }
+  }
+
+  async function handleHardDeleteAccount() {
+    const shouldDelete = window.confirm(
+      "Vill du hårdradera kontot permanent? Detta går inte att ångra.",
+    );
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    try {
+      setError("");
+      setMessage("");
+      await hardDeleteMyAccount();
+      await onAuthUpdate();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Kunde inte hårdradera kontot");
     }
   }
 
@@ -437,6 +501,26 @@ export default function AccountDashboard({
               <p>{formatDateTime(competition.startAt)} · {competition.place}</p>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="profile-panel profile-privacy">
+        <div className="profile-panel__header">
+          <div>
+            <p className="profile-panel__kicker">Integritet</p>
+            <h2>Din data</h2>
+          </div>
+        </div>
+        <div className="profile-privacy__actions">
+          <button type="button" onClick={() => void handleDownloadMyData()}>
+            Ladda ner min data
+          </button>
+          <button type="button" onClick={() => void handleSoftDeleteAccount()}>
+            Begär radering om 30 dagar
+          </button>
+          <button type="button" className="is-danger" onClick={() => void handleHardDeleteAccount()}>
+            Hard delete konto
+          </button>
         </div>
       </section>
     </main>

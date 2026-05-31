@@ -27,6 +27,9 @@ const userSchema = new Schema(
       default: ["user", "runner"],
       required: true,
     },
+    deletedAt: { type: Date, default: null },
+    deletionRequestedAt: { type: Date, default: null },
+    deletionScheduledAt: { type: Date, default: null },
   },
   { timestamps: true },
 );
@@ -57,6 +60,9 @@ const toPublicUser = (user: UserDocument): PublicUser => {
     club: user.club ?? null,
     organizerName: user.organizerName ?? null,
     roles,
+    deletedAt: user.deletedAt?.toISOString() ?? null,
+    deletionRequestedAt: user.deletionRequestedAt?.toISOString() ?? null,
+    deletionScheduledAt: user.deletionScheduledAt?.toISOString() ?? null,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
   };

@@ -238,6 +238,112 @@ describe("competition backend flow", () => {
     assert.equal(registration.email, "sara@example.com");
   });
 
+  it("lets a user export data, schedule deletion and cancel it by logging in", async () => {
+    const registerResponse = await request("/api/v1/runners/register", {
+      method: "POST",
+      body: JSON.stringify({
+        firstName: "Export",
+        lastName: "Person",
+        email: "export@example.com",
+        password: "password123",
+        club: "Dataklubben",
+      }),
+    });
+
+    assert.equal(registerResponse.status, 201);
+    const sessionCookie = getSessionCookie(registerResponse);
+
+    const exportResponse = await request("/api/v1/auth/me/export", {
+      headers: {
+        Cookie: sessionCookie,
+      },
+    });
+
+    assert.equal(exportResponse.status, 200);
+    const exportedData = await exportResponse.json();
+    assert.equal(exportedData.user.email, "export@example.com");
+    assert.ok(Array.isArray(exportedData.runnerRegistrations));
+
+    const deleteResponse = await request("/api/v1/auth/me", {
+      method: "DELETE",
+      headers: {
+        Cookie: sessionCookie,
+      },
+    });
+
+    assert.equal(deleteResponse.status, 202);
+    const deleteBody = await deleteResponse.json();
+    assert.ok(deleteBody.deletionScheduledAt);
+
+    const pendingUser = await UserModel.findOne({ email: "export@example.com" });
+    assert.ok(pendingUser?.deletionScheduledAt);
+    assert.equal(pendingUser.deletedAt, null);
+
+    const currentSessionResponse = await request("/api/v1/auth/me", {
+      headers: {
+        Cookie: sessionCookie,
+      },
+    });
+
+    assert.equal(currentSessionResponse.status, 401);
+
+    const loginResponse = await request("/api/v1/runners/login", {
+      method: "POST",
+      body: JSON.stringify({
+        email: "export@example.com",
+        password: "password123",
+      }),
+    });
+
+    assert.equal(loginResponse.status, 200);
+
+    const restoredUser = await UserModel.findOne({ email: "export@example.com" });
+    assert.equal(restoredUser?.deletionScheduledAt, null);
+    assert.equal(restoredUser?.deletionRequestedAt, null);
+  });
+
+  it("keeps historical runner names when account deletion is finalized", async () => {
+    const runnerAccount = await UserModel.create({
+      firstName: "Historisk",
+      lastName: "Löpare",
+      email: "historisk@example.com",
+      roles: ["user", "runner"],
+      passwordHash: await hashPassword("password123"),
+    });
+
+    const runner = await RunnerModel.create({
+      competitionId: seededCompetitionId,
+      runnerAccountId: runnerAccount._id,
+      firstName: "Historisk",
+      lastName: "Löpare",
+      email: "historisk@example.com",
+      club: "Gamla Klubben",
+      lapTimes: [3599],
+    });
+
+    runnerAccount.deletionRequestedAt = new Date("2026-01-01T00:00:00.000Z");
+    runnerAccount.deletionScheduledAt = new Date("2026-01-31T00:00:00.000Z");
+    await runnerAccount.save();
+
+    const loginResponse = await request("/api/v1/runners/login", {
+      method: "POST",
+      body: JSON.stringify({
+        email: "historisk@example.com",
+        password: "password123",
+      }),
+    });
+
+    assert.equal(loginResponse.status, 410);
+
+    const historicalRunner = await RunnerModel.findById(runner.id);
+
+    assert.equal(historicalRunner?.firstName, "Historisk");
+    assert.equal(historicalRunner?.lastName, "Löpare");
+    assert.equal(historicalRunner?.email, null);
+    assert.equal(historicalRunner?.runnerAccountId, null);
+    assert.deepEqual(historicalRunner?.lapTimes, [3599]);
+  });
+
   it("lets a timekeeper report lap times but not add or delete runners", async () => {
     await UserModel.create({
       firstName: "Tim",

@@ -67,6 +67,28 @@ export async function logoutUser(): Promise<void> {
   return parseResponse<void>(response);
 }
 
+export async function downloadMyData(): Promise<unknown> {
+  const response = await apiFetch("/auth/me/export");
+
+  return parseResponse<unknown>(response);
+}
+
+export async function softDeleteMyAccount(): Promise<void> {
+  const response = await apiFetch("/auth/me", {
+    method: "DELETE",
+  });
+
+  await parseResponse<void>(response);
+}
+
+export async function hardDeleteMyAccount(): Promise<void> {
+  const response = await apiFetch("/auth/me/hard", {
+    method: "DELETE",
+  });
+
+  await parseResponse<void>(response);
+}
+
 export async function registerOrganizer(data: {
   name: string;
   email: string;

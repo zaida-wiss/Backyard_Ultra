@@ -13,6 +13,11 @@ import type {
   LoginBody,
   OrganizerRegistrationBody,
 } from "../schemas/organizerSchema.js";
+import {
+  cancelAccountDeletion,
+  finalizeAccountDeletion,
+  isAccountDeletionDue,
+} from "../services/accountDeletion.js";
 import { setAuthCookie } from "../utils/authCookie.js";
 import { createToken, hashPassword, verifyPassword } from "../utils/jwt.js";
 
@@ -55,6 +60,15 @@ const loginOrganizer = async (req: Request, res: Response, next: NextFunction) =
 
     if (!user || !(await verifyPassword(password, user.passwordHash))) {
       throw new HttpError(401, "INVALID_CREDENTIALS", "Fel email eller lösenord");
+    }
+
+    if (isAccountDeletionDue(user)) {
+      await finalizeAccountDeletion(user);
+      throw new HttpError(410, "ACCOUNT_DELETED", "Kontot har raderats efter ångerperioden");
+    }
+
+    if (cancelAccountDeletion(user)) {
+      await user.save();
     }
 
     if (!hasRole(user, "organizer") && !hasRole(user, "admin")) {

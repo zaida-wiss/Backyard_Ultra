@@ -1,6 +1,7 @@
 import app from "./app.js";
 import { config } from "./config/env.js";
 import { connectToDatabase } from "./config/database.js";
+import { startAccountDeletionJob } from "./services/accountDeletionJob.js";
 import { logger } from "./utils/logger.js";
 
 const startServer = async () => {
@@ -8,6 +9,7 @@ const startServer = async () => {
     await connectToDatabase();
 
     app.listen(config.port, () => {
+      startAccountDeletionJob();
       logger.info({ port: config.port }, `Servern körs på http://localhost:${config.port}`);
     });
   } catch (error) {

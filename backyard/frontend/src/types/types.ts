@@ -28,6 +28,9 @@ export type UserAccount = {
   club: string | null;
   organizerName: string | null;
   roles: AuthRole[];
+  deletedAt: string | null;
+  deletionRequestedAt: string | null;
+  deletionScheduledAt: string | null;
   createdAt: string;
   updatedAt: string;
 };

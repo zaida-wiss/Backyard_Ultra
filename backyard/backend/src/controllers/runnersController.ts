@@ -17,6 +17,11 @@ import type {
   RunnerAccountRegistrationBody,
   ValidatedRunnerBody,
 } from "../schemas/runnerSchema.js";
+import {
+  cancelAccountDeletion,
+  finalizeAccountDeletion,
+  isAccountDeletionDue,
+} from "../services/accountDeletion.js";
 import { setAuthCookie } from "../utils/authCookie.js";
 import { createToken, hashPassword, verifyPassword } from "../utils/jwt.js";
 import { getCompetitionOrThrow, requireCompetitionOwner } from "./competitionsController.js";
@@ -143,6 +148,15 @@ const loginRunner = async (req: Request, res: Response, next: NextFunction) => {
 
     if (!runnerAccount || !(await verifyPassword(password, runnerAccount.passwordHash))) {
       throw new HttpError(401, "INVALID_CREDENTIALS", "Fel email eller lösenord");
+    }
+
+    if (isAccountDeletionDue(runnerAccount)) {
+      await finalizeAccountDeletion(runnerAccount);
+      throw new HttpError(410, "ACCOUNT_DELETED", "Kontot har raderats efter ångerperioden");
+    }
+
+    if (cancelAccountDeletion(runnerAccount)) {
+      await runnerAccount.save();
     }
 
     const token = createToken({ id: runnerAccount.id, email: runnerAccount.email }, runnerAccount.roles);
