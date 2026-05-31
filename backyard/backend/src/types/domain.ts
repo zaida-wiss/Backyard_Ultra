@@ -60,6 +60,7 @@ export type Runner = {
   lastName: string;
   email: string | null;
   club: string | null;
+  lapTimes: number[];
   status: RunnerStatus;
   deletedAt: string | null;
   createdAt: string;
@@ -98,7 +99,7 @@ export type CreateRunnerInput = {
   club?: string | null;
 };
 
-export type AuthRole = "user" | "admin" | "organizer" | "runner";
+export type AuthRole = "user" | "admin" | "organizer" | "runner" | "timekeeper";
 
 export type AuthUser = {
   id: string;

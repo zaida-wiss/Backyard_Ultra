@@ -1,5 +1,5 @@
 import "./Header.css";
-import { LogOut, UserLock } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import type { AuthResponse } from "../../../types/types";
 
 type HeaderProps = {
@@ -12,7 +12,6 @@ export default function Header({ session, onLogout }: HeaderProps) {
   const displayName = session
     ? `${session.user.firstName} ${session.user.lastName}`
     : "";
-  const roles = session?.user.roles.join(", ") ?? "";
 
   return (
     <header className="header">
@@ -20,22 +19,33 @@ export default function Header({ session, onLogout }: HeaderProps) {
 
       {session ? (
         <div className="header__session">
-          <span>{displayName}</span>
-          <small>{roles}</small>
+          <div className="header__welcome">
+            <small>Välkommen</small>
+            <span>{displayName}</span>
+          </div>
           <button
             type="button"
-            className="header__icon-button"
+            className="header__settings-button"
+            aria-label="Inställningar"
+            title="Inställningar"
+          >
+            <Settings size={22} />
+          </button>
+          <button
+            type="button"
+            className="header__logout-button"
             aria-label="Logga ut"
             title="Logga ut"
             onClick={onLogout}
           >
             <LogOut size={18} />
+            <span>Logga ut</span>
           </button>
         </div>
       ) : (
         <div className="header__session">
-          <UserLock size={18} />
-          <span>Logga in</span>
+          <span className="header__status-dot" />
+          <span>System online</span>
         </div>
       )}
     </header>

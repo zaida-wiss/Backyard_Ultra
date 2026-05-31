@@ -13,9 +13,11 @@ import {
 } from "../models/user.model.js";
 import type { LoginBody } from "../schemas/organizerSchema.js";
 import type {
+  RunnerLapTimesBody,
   RunnerAccountRegistrationBody,
   ValidatedRunnerBody,
 } from "../schemas/runnerSchema.js";
+import { setAuthCookie } from "../utils/authCookie.js";
 import { createToken, hashPassword, verifyPassword } from "../utils/jwt.js";
 import { getCompetitionOrThrow, requireCompetitionOwner } from "./competitionsController.js";
 
@@ -120,11 +122,14 @@ const registerRunnerAccount = async (
       passwordHash: await hashPassword(password),
     });
 
+    const token = createToken({ id: runnerAccount.id, email: runnerAccount.email }, runnerAccount.roles);
+
+    setAuthCookie(res, token);
+
     return res.status(201).json({
       user: toPublicUser(runnerAccount),
       runner: toRunnerAccount(runnerAccount),
       organizer: null,
-      token: createToken({ id: runnerAccount.id, email: runnerAccount.email }, runnerAccount.roles),
     });
   } catch (error) {
     return next(error);
@@ -140,13 +145,16 @@ const loginRunner = async (req: Request, res: Response, next: NextFunction) => {
       throw new HttpError(401, "INVALID_CREDENTIALS", "Fel email eller lösenord");
     }
 
+    const token = createToken({ id: runnerAccount.id, email: runnerAccount.email }, runnerAccount.roles);
+
+    setAuthCookie(res, token);
+
     return res.json({
       user: toPublicUser(runnerAccount),
       runner: toRunnerAccount(runnerAccount),
       organizer: hasRole(runnerAccount, "organizer") || hasRole(runnerAccount, "admin")
         ? toOrganizerAccount(runnerAccount)
         : null,
-      token: createToken({ id: runnerAccount.id, email: runnerAccount.email }, runnerAccount.roles),
     });
   } catch (error) {
     return next(error);
@@ -301,6 +309,31 @@ const deleteRunner = async (req: Request, res: Response, next: NextFunction) => 
   }
 };
 
+const updateRunnerLapTimes = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const runner = await getRunnerOrThrow(getRouteParam(req.params.id));
+    const competition = await getCompetitionOrThrow(runner.competitionId.toString());
+    const { lapTimes } = req.validatedBody as RunnerLapTimesBody;
+    const roles = req.authUser?.roles ?? [];
+    const canReportAnyCompetition = roles.includes("timekeeper") || roles.includes("admin");
+
+    if (!canReportAnyCompetition) {
+      if (!req.organizer) {
+        throw new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som tidtagare eller arrangör");
+      }
+
+      requireCompetitionOwner(competition, req.organizer.id, req.organizer.role);
+    }
+
+    runner.lapTimes = lapTimes;
+    await runner.save();
+
+    return res.json(toRunnerResponse(runner));
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export {
   deleteRunner,
   getCurrentRunner,
@@ -312,5 +345,6 @@ export {
   registerCurrentRunnerForCompetition,
   registerRunner,
   registerRunnerAccount,
+  updateRunnerLapTimes,
   updateRunner,
 };

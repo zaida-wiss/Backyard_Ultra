@@ -42,31 +42,56 @@ async function parseResponse<ResponseBody>(response: Response): Promise<Response
   return body as ResponseBody;
 }
 
+function apiFetch(path: string, options: RequestInit = {}) {
+  return fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    credentials: "include",
+  });
+}
+
+export async function getCurrentSession(): Promise<AuthResponse | null> {
+  const response = await apiFetch("/auth/me");
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  return parseResponse<AuthResponse>(response);
+}
+
+export async function logoutUser(): Promise<void> {
+  const response = await apiFetch("/auth/logout", {
+    method: "POST",
+  });
+
+  return parseResponse<void>(response);
+}
+
 export async function registerOrganizer(data: {
   name: string;
   email: string;
   password: string;
-}): Promise<AuthResponse> {
-  const response = await fetch(`${API_BASE_URL}/organizers/register`, {
+}): Promise<void> {
+  const response = await apiFetch("/organizers/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 
-  return parseResponse<AuthResponse>(response);
+  await parseResponse<unknown>(response);
 }
 
 export async function loginOrganizer(data: {
   email: string;
   password: string;
-}): Promise<AuthResponse> {
-  const response = await fetch(`${API_BASE_URL}/organizers/login`, {
+}): Promise<void> {
+  const response = await apiFetch("/organizers/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 
-  return parseResponse<AuthResponse>(response);
+  await parseResponse<unknown>(response);
 }
 
 export async function registerRunner(data: {
@@ -75,54 +100,77 @@ export async function registerRunner(data: {
   email: string;
   password: string;
   club: string | null;
-}): Promise<AuthResponse> {
-  const response = await fetch(`${API_BASE_URL}/runners/register`, {
+}): Promise<void> {
+  const response = await apiFetch("/runners/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 
-  return parseResponse<AuthResponse>(response);
+  await parseResponse<unknown>(response);
 }
+
+export const registerUser = registerRunner;
 
 export async function loginRunner(data: {
   email: string;
   password: string;
-}): Promise<AuthResponse> {
-  const response = await fetch(`${API_BASE_URL}/runners/login`, {
+}): Promise<void> {
+  const response = await apiFetch("/runners/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 
-  return parseResponse<AuthResponse>(response);
+  await parseResponse<unknown>(response);
 }
 
+export const loginUser = loginRunner;
+
 export async function becomeOrganizer(
-  token: string,
   data: { name: string },
-): Promise<AuthResponse> {
-  const response = await fetch(`${API_BASE_URL}/organizers/me`, {
+): Promise<void> {
+  const response = await apiFetch("/organizers/me", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });
 
-  return parseResponse<AuthResponse>(response);
+  await parseResponse<unknown>(response);
+}
+
+export async function becomeTimekeeper(): Promise<void> {
+  const response = await apiFetch("/timekeepers/me", {
+    method: "POST",
+  });
+
+  await parseResponse<unknown>(response);
+}
+
+export async function reportRunnerLapTimes(
+  runnerId: string,
+  lapTimes: number[],
+): Promise<RunnerRegistration> {
+  const response = await apiFetch(`/runners/${runnerId}/lap-times`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ lapTimes }),
+  });
+
+  return parseResponse<RunnerRegistration>(response);
 }
 
 export async function createCompetition(
-  token: string,
   data: CreateCompetitionData,
 ): Promise<Competition> {
-  const response = await fetch(`${API_BASE_URL}/competitions`, {
+  const response = await apiFetch("/competitions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });
@@ -132,33 +180,31 @@ export async function createCompetition(
 
 export async function listCompetitions(organizerId?: string): Promise<Competition[]> {
   const query = organizerId ? `?organizerId=${organizerId}` : "";
-  const response = await fetch(`${API_BASE_URL}/competitions${query}`);
+  const response = await apiFetch(`/competitions${query}`);
 
   return parseResponse<Competition[]>(response);
 }
 
 export async function registerCurrentRunnerForCompetition(
-  token: string,
   competitionId: string,
 ): Promise<RunnerRegistration> {
-  const response = await fetch(`${API_BASE_URL}/competitions/${competitionId}/runners/me`, {
+  const response = await apiFetch(`/competitions/${competitionId}/runners/me`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
   });
 
   return parseResponse<RunnerRegistration>(response);
 }
 
-export async function listRunnerRegistrations(
-  token: string,
-): Promise<RunnerRegistrationWithCompetition[]> {
-  const response = await fetch(`${API_BASE_URL}/runners/me/registrations`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export async function listCompetitionRunners(
+  competitionId: string,
+): Promise<RunnerRegistration[]> {
+  const response = await apiFetch(`/competitions/${competitionId}/runners`);
+
+  return parseResponse<RunnerRegistration[]>(response);
+}
+
+export async function listRunnerRegistrations(): Promise<RunnerRegistrationWithCompetition[]> {
+  const response = await apiFetch("/runners/me/registrations");
 
   return parseResponse<RunnerRegistrationWithCompetition[]>(response);
 }

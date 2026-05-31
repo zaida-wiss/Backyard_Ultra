@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { becomeOrganizer, loginRunner, registerRunner } from "../../services/api";
-import type { AuthResponse } from "../../types/types";
+import { loginUser, registerUser } from "../../services/api";
 import {
   emptyFieldErrors,
   validateAuthForm,
@@ -10,8 +9,6 @@ export type UserData = {
   firstName: string;
   lastName: string;
   club: string;
-  wantsOrganizer: boolean;
-  organizerName: string;
   email: string;
   confirmEmail: string;
   password: string;
@@ -22,8 +19,6 @@ const initialUser: UserData = {
   firstName: "",
   lastName: "",
   club: "",
-  wantsOrganizer: false,
-  organizerName: "",
   email: "",
   confirmEmail: "",
   password: "",
@@ -31,7 +26,7 @@ const initialUser: UserData = {
 };
 
 type UseUserLoginFormProps = {
-  onAuthSuccess: (auth: AuthResponse) => void;
+  onAuthSuccess: () => void | Promise<void>;
 };
 
 export function useUserLoginForm({ onAuthSuccess }: UseUserLoginFormProps) {
@@ -80,14 +75,6 @@ export function useUserLoginForm({ onAuthSuccess }: UseUserLoginFormProps) {
     updateField("club", value);
   }
 
-  function handleWantsOrganizerChange(value: boolean) {
-    updateField("wantsOrganizer", value);
-  }
-
-  function handleOrganizerNameChange(value: string) {
-    updateField("organizerName", value);
-  }
-
   function handleEmailChange(value: string) {
     updateField("email", value);
   }
@@ -126,28 +113,23 @@ export function useUserLoginForm({ onAuthSuccess }: UseUserLoginFormProps) {
       setError("");
       setIsSubmitting(true);
 
-      let auth = isRegisterMode
-        ? await registerRunner({
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            password: user.password,
-            club: user.club || null,
-          })
-        : await loginRunner({
-            email: user.email,
-            password: user.password,
-          });
-
-      if (isRegisterMode && user.wantsOrganizer) {
-        // Samma konto får en extra behörighet. Det skapas alltså inte ett separat arrangörskonto.
-        auth = await becomeOrganizer(auth.token, {
-          name: user.organizerName,
+      if (isRegisterMode) {
+        await registerUser({
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          password: user.password,
+          club: user.club || null,
+        });
+      } else {
+        await loginUser({
+          email: user.email,
+          password: user.password,
         });
       }
 
       setSuccess(true);
-      onAuthSuccess(auth);
+      await onAuthSuccess();
     } catch (err) {
       setSuccess(false);
       setError(err instanceof Error ? err.message : "Något gick fel");
@@ -169,8 +151,6 @@ export function useUserLoginForm({ onAuthSuccess }: UseUserLoginFormProps) {
     handleFirstNameChange,
     handleLastNameChange,
     handleClubChange,
-    handleWantsOrganizerChange,
-    handleOrganizerNameChange,
     handleEmailChange,
     handleConfirmEmailChange,
     handlePasswordChange,

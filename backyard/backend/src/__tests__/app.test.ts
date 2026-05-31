@@ -29,6 +29,14 @@ function request(path: string, options: RequestInit = {}) {
   });
 }
 
+function getSessionCookie(response: Response) {
+  const setCookie = response.headers.get("set-cookie");
+
+  assert.ok(setCookie);
+
+  return setCookie.split(";")[0];
+}
+
 const closeServer = async () => {
   await new Promise<void>((resolve, reject) => {
     server.close((error) => {
@@ -103,13 +111,22 @@ describe("competition backend flow", () => {
     });
 
     assert.equal(loginResponse.status, 200);
-    const loginBody = await loginResponse.json();
-    assert.ok(loginBody.token);
+    const sessionCookie = getSessionCookie(loginResponse);
+
+    const currentSessionResponse = await request("/api/v1/auth/me", {
+      headers: {
+        Cookie: sessionCookie,
+      },
+    });
+
+    assert.equal(currentSessionResponse.status, 200);
+    const currentSession = await currentSessionResponse.json();
+    assert.equal(currentSession.user.email, "arrangor@example.com");
 
     const competitionResponse = await request("/api/v1/competitions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${loginBody.token}`,
+        Cookie: sessionCookie,
       },
       body: JSON.stringify({
         name: "Test Backyard",
@@ -128,7 +145,7 @@ describe("competition backend flow", () => {
     const runnerResponse = await request(`/api/v1/competitions/${competition.id}/runners`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${loginBody.token}`,
+        Cookie: sessionCookie,
       },
       body: JSON.stringify({
         firstName: "Zaid",
@@ -152,12 +169,12 @@ describe("competition backend flow", () => {
         password: "password123",
       }),
     });
-    const loginBody = await loginResponse.json();
+    const sessionCookie = getSessionCookie(loginResponse);
 
     const response = await request("/api/v1/competitions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${loginBody.token}`,
+        Cookie: sessionCookie,
       },
       body: JSON.stringify({
         name: "Trasig tävling",
@@ -206,13 +223,12 @@ describe("competition backend flow", () => {
     });
 
     assert.equal(loginResponse.status, 200);
-    const loginBody = await loginResponse.json();
-    assert.ok(loginBody.token);
+    const sessionCookie = getSessionCookie(loginResponse);
 
     const registrationResponse = await request(`/api/v1/competitions/${seededCompetitionId}/runners/me`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${loginBody.token}`,
+        Cookie: sessionCookie,
       },
     });
 
@@ -220,5 +236,81 @@ describe("competition backend flow", () => {
     const registration = await registrationResponse.json();
     assert.equal(registration.competitionId, seededCompetitionId);
     assert.equal(registration.email, "sara@example.com");
+  });
+
+  it("lets a timekeeper report lap times but not add or delete runners", async () => {
+    await UserModel.create({
+      firstName: "Tim",
+      lastName: "Tidtagare",
+      email: "tidtagare@example.com",
+      roles: ["user", "runner", "timekeeper"],
+      passwordHash: await hashPassword("password123"),
+    });
+
+    const runner = await RunnerModel.create({
+      competitionId: seededCompetitionId,
+      firstName: "Nora",
+      lastName: "Nilsson",
+      email: "nora@example.com",
+      club: "Tidklubben",
+    });
+
+    const loginResponse = await request("/api/v1/runners/login", {
+      method: "POST",
+      body: JSON.stringify({
+        email: "tidtagare@example.com",
+        password: "password123",
+      }),
+    });
+
+    assert.equal(loginResponse.status, 200);
+    const sessionCookie = getSessionCookie(loginResponse);
+
+    const currentSessionResponse = await request("/api/v1/auth/me", {
+      headers: {
+        Cookie: sessionCookie,
+      },
+    });
+
+    assert.equal(currentSessionResponse.status, 200);
+    const currentSession = await currentSessionResponse.json();
+    assert.ok(currentSession.user.roles.includes("timekeeper"));
+
+    const lapTimesResponse = await request(`/api/v1/runners/${runner.id}/lap-times`, {
+      method: "PATCH",
+      headers: {
+        Cookie: sessionCookie,
+      },
+      body: JSON.stringify({
+        lapTimes: [3598, 3602],
+      }),
+    });
+
+    assert.equal(lapTimesResponse.status, 200);
+    const updatedRunner = await lapTimesResponse.json();
+    assert.deepEqual(updatedRunner.lapTimes, [3598, 3602]);
+
+    const addRunnerResponse = await request(`/api/v1/competitions/${seededCompetitionId}/runners`, {
+      method: "POST",
+      headers: {
+        Cookie: sessionCookie,
+      },
+      body: JSON.stringify({
+        firstName: "Otto",
+        lastName: "Olsson",
+        email: "otto@example.com",
+      }),
+    });
+
+    assert.equal(addRunnerResponse.status, 403);
+
+    const deleteRunnerResponse = await request(`/api/v1/runners/${runner.id}`, {
+      method: "DELETE",
+      headers: {
+        Cookie: sessionCookie,
+      },
+    });
+
+    assert.equal(deleteRunnerResponse.status, 403);
   });
 });

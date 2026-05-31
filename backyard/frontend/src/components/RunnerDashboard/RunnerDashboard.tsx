@@ -14,7 +14,6 @@ import "../Dashboard/Dashboard.css";
 
 type RunnerDashboardProps = {
   runner: RunnerAccount;
-  token: string;
 };
 
 function formatDateTime(value: string) {
@@ -32,7 +31,7 @@ function formatCompetitionDates(competition: Competition) {
   return `${formatDateTime(competition.startAt)} till ${formatDateTime(competition.endAt)}`;
 }
 
-export default function RunnerDashboard({ runner, token }: RunnerDashboardProps) {
+export default function RunnerDashboard({ runner }: RunnerDashboardProps) {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [registrations, setRegistrations] = useState<RunnerRegistrationWithCompetition[]>([]);
   const [error, setError] = useState("");
@@ -42,7 +41,7 @@ export default function RunnerDashboard({ runner, token }: RunnerDashboardProps)
   useEffect(() => {
     Promise.all([
       listCompetitions(),
-      listRunnerRegistrations(token),
+      listRunnerRegistrations(),
     ])
       .then(([competitionsResponse, registrationsResponse]) => {
         setCompetitions(competitionsResponse);
@@ -51,7 +50,7 @@ export default function RunnerDashboard({ runner, token }: RunnerDashboardProps)
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : "Kunde inte hämta tävlingar");
       });
-  }, [token]);
+  }, []);
 
   const registeredCompetitionIds = useMemo(() => {
     return new Set(registrations.map((registration) => registration.competitionId));
@@ -63,7 +62,7 @@ export default function RunnerDashboard({ runner, token }: RunnerDashboardProps)
       setSuccess("");
       setIsSubmittingCompetitionId(competition.id);
 
-      const registration = await registerCurrentRunnerForCompetition(token, competition.id);
+      const registration = await registerCurrentRunnerForCompetition(competition.id);
 
       setRegistrations((previous) => [
         { ...registration, competition },

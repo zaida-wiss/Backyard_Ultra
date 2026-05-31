@@ -3,7 +3,6 @@ import { z } from "zod";
 export type FieldErrors = {
   firstName: string;
   lastName: string;
-  organizerName: string;
   email: string;
   confirmEmail: string;
   password: string;
@@ -14,8 +13,6 @@ export type AuthFormData = {
   firstName: string;
   lastName: string;
   club: string;
-  wantsOrganizer: boolean;
-  organizerName: string;
   email: string;
   confirmEmail: string;
   password: string;
@@ -29,7 +26,6 @@ type AuthFormOptions = {
 const emptyFieldErrors: FieldErrors = {
   firstName: "",
   lastName: "",
-  organizerName: "",
   email: "",
   confirmEmail: "",
   password: "",
@@ -92,19 +88,7 @@ const registerBaseSchema = loginSchema.extend({
   firstName: nameSchema("Förnamn"),
   lastName: nameSchema("Efternamn"),
   club: z.string(),
-  wantsOrganizer: z.boolean(),
-  organizerName: z.string().trim(),
 }).superRefine(addConfirmationIssues);
-
-const registerSchema = registerBaseSchema.superRefine((data, ctx) => {
-  if (data.wantsOrganizer && data.organizerName.trim().length === 0) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["organizerName"],
-      message: "Arrangörsnamn krävs när du vill bli arrangör",
-    });
-  }
-});
 
 const getSchema = ({ isRegisterMode }: AuthFormOptions) => {
   // Vilket schema som gäller beror på om användaren loggar in eller registrerar sig.
@@ -112,7 +96,7 @@ const getSchema = ({ isRegisterMode }: AuthFormOptions) => {
     return loginSchema;
   }
 
-  return registerSchema;
+  return registerBaseSchema;
 };
 
 const validateAuthForm = (

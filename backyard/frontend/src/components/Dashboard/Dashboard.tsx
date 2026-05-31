@@ -6,7 +6,6 @@ import "./Dashboard.css";
 
 type DashboardProps = {
   organizer: Organizer;
-  token: string;
 };
 
 const initialCompetitionForm: CreateCompetitionData = {
@@ -32,7 +31,7 @@ function formatCompetitionDates(competition: Competition) {
   return `${formatDateTime(competition.startAt)} till ${formatDateTime(competition.endAt)}`;
 }
 
-export default function Dashboard ({ organizer, token }: DashboardProps) {
+export default function Dashboard ({ organizer }: DashboardProps) {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [competitionForm, setCompetitionForm] = useState<CreateCompetitionData>(initialCompetitionForm);
   const [error, setError] = useState("");
@@ -62,7 +61,7 @@ export default function Dashboard ({ organizer, token }: DashboardProps) {
       setSuccess("");
       setIsSubmitting(true);
 
-      const competition = await createCompetition(token, competitionForm);
+      const competition = await createCompetition(competitionForm);
 
       setCompetitions((previous) => [competition, ...previous]);
       setCompetitionForm(initialCompetitionForm);

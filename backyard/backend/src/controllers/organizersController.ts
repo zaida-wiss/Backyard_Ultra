@@ -13,6 +13,7 @@ import type {
   LoginBody,
   OrganizerRegistrationBody,
 } from "../schemas/organizerSchema.js";
+import { setAuthCookie } from "../utils/authCookie.js";
 import { createToken, hashPassword, verifyPassword } from "../utils/jwt.js";
 
 const registerOrganizer = async (req: Request, res: Response, next: NextFunction) => {
@@ -33,11 +34,14 @@ const registerOrganizer = async (req: Request, res: Response, next: NextFunction
       passwordHash: await hashPassword(password),
     });
 
+    const token = createToken({ id: user.id, email: user.email }, user.roles);
+
+    setAuthCookie(res, token);
+
     return res.status(201).json({
       user: toPublicUser(user),
       runner: toRunnerAccount(user),
       organizer: toOrganizerAccount(user),
-      token: createToken({ id: user.id, email: user.email }, user.roles),
     });
   } catch (error) {
     return next(error);
@@ -57,11 +61,14 @@ const loginOrganizer = async (req: Request, res: Response, next: NextFunction) =
       throw new HttpError(403, "FORBIDDEN", "Kontot är inte arrangör");
     }
 
+    const token = createToken({ id: user.id, email: user.email }, user.roles);
+
+    setAuthCookie(res, token);
+
     return res.json({
       user: toPublicUser(user),
       runner: hasRole(user, "runner") ? toRunnerAccount(user) : null,
       organizer: toOrganizerAccount(user),
-      token: createToken({ id: user.id, email: user.email }, user.roles),
     });
   } catch (error) {
     return next(error);
@@ -97,11 +104,14 @@ const becomeOrganizer = async (req: Request, res: Response, next: NextFunction) 
 
     await user.save();
 
+    const token = createToken({ id: user.id, email: user.email }, user.roles);
+
+    setAuthCookie(res, token);
+
     return res.json({
       user: toPublicUser(user),
       runner: hasRole(user, "runner") ? toRunnerAccount(user) : null,
       organizer: toOrganizerAccount(user),
-      token: createToken({ id: user.id, email: user.email }, user.roles),
     });
   } catch (error) {
     return next(error);

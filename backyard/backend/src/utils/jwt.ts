@@ -17,7 +17,7 @@ type VerifiedJwtPayload = JwtPayload & {
 };
 
 const TOKEN_TTL = "2h";
-const authRoles: AuthRole[] = ["user", "admin", "organizer", "runner"];
+const authRoles: AuthRole[] = ["user", "admin", "organizer", "runner", "timekeeper"];
 
 const hashPassword = async (password: string): Promise<string> => {
   // bcrypt saltar och hashar lösenordet. Vi sparar aldrig lösenord i klartext.

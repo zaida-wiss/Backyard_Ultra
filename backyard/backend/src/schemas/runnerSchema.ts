@@ -9,6 +9,10 @@ import {
 
 export type ValidatedRunnerBody = Omit<CreateRunnerInput, "competitionId">;
 
+export type RunnerLapTimesBody = {
+  lapTimes: number[];
+};
+
 export type RunnerAccountRegistrationBody = Omit<CreateRunnerAccountInput, "passwordHash"> & {
   password: string;
 };
@@ -46,4 +50,25 @@ export const parseRunnerAccountRegistration = (
   }
 
   return { firstName, lastName, email, password, club };
+};
+
+export const parseRunnerLapTimes = (body: unknown): RunnerLapTimesBody => {
+  const requestBody = toRequestBody(body);
+  const { lapTimes } = requestBody;
+
+  if (!Array.isArray(lapTimes)) {
+    throw new HttpError(400, "BAD_REQUEST", "lapTimes måste vara en lista med tider");
+  }
+
+  const parsedLapTimes = lapTimes.map((lapTime) => {
+    const parsedLapTime = Number(lapTime);
+
+    if (!Number.isFinite(parsedLapTime) || parsedLapTime < 0) {
+      throw new HttpError(400, "BAD_REQUEST", "alla tider måste vara positiva nummer");
+    }
+
+    return parsedLapTime;
+  });
+
+  return { lapTimes: parsedLapTimes };
 };

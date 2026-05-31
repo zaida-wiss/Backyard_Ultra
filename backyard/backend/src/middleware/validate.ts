@@ -7,6 +7,7 @@ import { parseCompetition } from "../schemas/competitionSchema.js";
 import {
   parseRunner,
   parseRunnerAccountRegistration,
+  parseRunnerLapTimes,
 } from "../schemas/runnerSchema.js";
 import { parseObjectIdParams } from "../schemas/paramSchema.js";
 
@@ -55,6 +56,8 @@ const validateRunner = validateBody(parseRunner);
 
 const validateRunnerAccountRegistration = validateBody(parseRunnerAccountRegistration);
 
+const validateRunnerLapTimes = validateBody(parseRunnerLapTimes);
+
 export {
   validateCompetition,
   validateCompetitionIdParam,
@@ -63,4 +66,5 @@ export {
   validateOrganizerRegistration,
   validateRunner,
   validateRunnerAccountRegistration,
+  validateRunnerLapTimes,
 };

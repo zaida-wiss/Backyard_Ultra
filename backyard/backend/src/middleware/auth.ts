@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 
 import HttpError from "../errors/httpError.js";
 import { hasRole, toOrganizerAccount, toPublicUser, toRunnerAccount, UserModel } from "../models/user.model.js";
+import { getAuthCookieToken } from "../utils/authCookie.js";
 import { verifyToken } from "../utils/jwt.js";
 import type {
   AuthRole,
@@ -15,20 +16,9 @@ const isOrganizerRole = (role: AuthRole) => {
   return organizerRoles.includes(role);
 };
 
-const getBearerToken = (req: Request) => {
-  const header = req.headers.authorization;
-
-  // API:t förväntar sig formatet: Authorization: Bearer <token>
-  if (!header || !header.startsWith("Bearer ")) {
-    return null;
-  }
-
-  return header.replace("Bearer ", "");
-};
-
 const getTokenPayload = (req: Request): TokenPayload => {
-  // Här gör vi om headern till verifierad token-data, eller stoppar requesten med 401.
-  const token = getBearerToken(req);
+  // Sessionen läses från HttpOnly-cookien. Frontend ska aldrig behöva hantera JWT-token själv.
+  const token = getAuthCookieToken(req);
   const payload = token ? verifyToken(token) : null;
 
   if (!payload) {

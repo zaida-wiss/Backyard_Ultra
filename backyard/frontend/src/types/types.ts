@@ -18,7 +18,7 @@ export type Organizer = {
   updatedAt?: string;
 };
 
-export type AuthRole = "user" | "admin" | "organizer" | "runner";
+export type AuthRole = "user" | "admin" | "organizer" | "runner" | "timekeeper";
 
 export type UserAccount = {
   id: string;
@@ -46,7 +46,6 @@ export type AuthResponse = {
   user: UserAccount;
   runner: RunnerAccount | null;
   organizer: Organizer | null;
-  token: string;
 };
 
 export type Competition = {
@@ -69,6 +68,7 @@ export type RunnerRegistration = {
   lastName: string;
   email: string | null;
   club: string | null;
+  lapTimes: number[];
   status: "registered";
   deletedAt: string | null;
   createdAt: string;

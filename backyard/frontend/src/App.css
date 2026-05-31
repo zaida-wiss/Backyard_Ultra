@@ -1,32 +1,11 @@
 #root {
   min-height: 100vh;
-  padding-top: 50px;
-  background: #eef5f0;
+  padding-top: 92px;
+  background: #020904;
 }
 
-.app-view-toggle {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  padding: 18px 16px 0;
-}
-
-.app-view-toggle button {
-  min-height: 38px;
-  border: 1px solid #244c36;
-  border-radius: 6px;
-  background: #ffffff;
-  color: #244c36;
-  padding: 0 14px;
-  font-weight: 700;
-}
-
-.app-view-toggle button.is-active {
-  background: #244c36;
-  color: #ffffff;
-}
-
-.app-empty-state {
-  width: min(640px, calc(100% - 32px));
-  margin: 48px auto;
+@media (max-width: 640px) {
+  #root {
+    padding-top: 74px;
+  }
 }

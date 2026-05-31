@@ -8,6 +8,7 @@ import {
   listCurrentRunnerRegistrations,
   loginRunner,
   registerRunnerAccount,
+  updateRunnerLapTimes,
   updateRunner,
 } from "../controllers/runnersController.js";
 import { requireAuth, requireRole, requireRunnerAuth } from "../middleware/auth.js";
@@ -16,6 +17,7 @@ import {
   validateLogin,
   validateRunner,
   validateRunnerAccountRegistration,
+  validateRunnerLapTimes,
 } from "../middleware/validate.js";
 
 const router = Router();
@@ -45,6 +47,17 @@ router.get(
 
 // GET /api/v1/runners/:id
 router.get("/:id", validateIdParam, getRunnerById);
+
+// PATCH /api/v1/runners/:id/lap-times
+// Tidtagare får rapportera tider, men får inte lägga till eller ta bort deltagare.
+router.patch(
+  "/:id/lap-times",
+  requireAuth,
+  requireRole("timekeeper", "organizer", "admin"),
+  validateIdParam,
+  validateRunnerLapTimes,
+  updateRunnerLapTimes,
+);
 
 // PUT /api/v1/runners/:id
 // Endast arrangören som äger tävlingen får ändra löparen.

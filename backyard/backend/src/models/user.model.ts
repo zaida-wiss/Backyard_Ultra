@@ -23,7 +23,7 @@ const userSchema = new Schema(
     organizerName: { type: String, default: null, trim: true },
     roles: {
       type: [String],
-      enum: ["user", "admin", "organizer", "runner"],
+      enum: ["user", "admin", "organizer", "runner", "timekeeper"],
       default: ["user", "runner"],
       required: true,
     },

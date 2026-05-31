@@ -21,6 +21,10 @@ const runnerSchema = new Schema(
     lastName: { type: String, required: true, trim: true },
     email: { type: String, default: null, lowercase: true, trim: true },
     club: { type: String, default: null, trim: true },
+    lapTimes: {
+      type: [Number],
+      default: [],
+    },
     status: {
       type: String,
       enum: ["registered"],
@@ -67,6 +71,7 @@ export const toRunnerResponse = (runner: RunnerDocument) => {
     lastName: runner.lastName,
     email: runner.email ?? null,
     club: runner.club ?? null,
+    lapTimes: runner.lapTimes,
     status: runner.status,
     deletedAt: runner.deletedAt?.toISOString() ?? null,
     createdAt: runner.createdAt.toISOString(),
