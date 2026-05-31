@@ -3,6 +3,7 @@ import { MapPin, Timer, Trophy, User } from "lucide-react";
 import {
   becomeOrganizer,
   becomeTimekeeper,
+  createCompetition,
   downloadMyData,
   hardDeleteMyAccount,
   listCompetitionRunners,
@@ -14,6 +15,7 @@ import {
 import type {
   AuthResponse,
   Competition,
+  CreateCompetitionData,
   RunnerRegistration,
   RunnerRegistrationWithCompetition,
 } from "../../types/types";
@@ -30,7 +32,17 @@ type UpcomingItem = {
   competition: Competition;
 };
 
+type ActiveRoleView = "runner" | "organizer" | "timekeeper";
+
 const BACKYARD_LAP_KM = 6.706;
+
+const initialCompetitionForm: CreateCompetitionData = {
+  name: "",
+  type: "",
+  place: "",
+  startAt: "",
+  endAt: null,
+};
 
 function hasOrganizerRole(session: AuthResponse) {
   return session.user.roles.includes("organizer") || session.user.roles.includes("admin");
@@ -58,12 +70,15 @@ export default function AccountDashboard({
 }: AccountDashboardProps) {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [registrations, setRegistrations] = useState<RunnerRegistrationWithCompetition[]>([]);
+  const [activeRoleView, setActiveRoleView] = useState<ActiveRoleView>("runner");
+  const [competitionForm, setCompetitionForm] = useState<CreateCompetitionData>(initialCompetitionForm);
   const [activeTimingCompetition, setActiveTimingCompetition] = useState<Competition | null>(null);
   const [timingRunners, setTimingRunners] = useState<RunnerRegistration[]>([]);
   const [lapTimeDrafts, setLapTimeDrafts] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isUpdatingRole, setIsUpdatingRole] = useState(false);
+  const [isCreatingCompetition, setIsCreatingCompetition] = useState(false);
   const [isLoadingTimingRunners, setIsLoadingTimingRunners] = useState(false);
   const [isReportingRunnerId, setIsReportingRunnerId] = useState<string | null>(null);
 
@@ -71,6 +86,11 @@ export default function AccountDashboard({
   const canJoin = session.user.roles.includes("runner");
   const canReportTimes = session.user.roles.includes("timekeeper");
   const displayName = `${session.user.firstName} ${session.user.lastName}`;
+  const organizerCompetitions = useMemo(() => {
+    const organizerId = session.organizer?.id ?? session.user.id;
+
+    return competitions.filter((competition) => competition.organizerId === organizerId);
+  }, [competitions, session.organizer?.id, session.user.id]);
 
   useEffect(() => {
     const requests: Promise<unknown>[] = [
@@ -131,6 +151,7 @@ export default function AccountDashboard({
       });
 
       await onAuthUpdate();
+      setActiveRoleView("organizer");
       setMessage("Arrangörsrollen är aktiverad på ditt konto.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Kunde inte uppdatera rollen");
@@ -148,6 +169,7 @@ export default function AccountDashboard({
       await becomeTimekeeper();
 
       await onAuthUpdate();
+      setActiveRoleView("timekeeper");
       setMessage("Funktionärsrollen är aktiverad på ditt konto.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Kunde inte uppdatera rollen");
@@ -215,6 +237,52 @@ export default function AccountDashboard({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Kunde inte hårdradera kontot");
     }
+  }
+
+  function updateCompetitionField<Key extends keyof CreateCompetitionData>(
+    key: Key,
+    value: CreateCompetitionData[Key],
+  ) {
+    setCompetitionForm((previous) => ({ ...previous, [key]: value }));
+  }
+
+  async function handleCompetitionSubmit(event: FormEvent) {
+    event.preventDefault();
+
+    if (!canOrganize) {
+      setError("Aktivera arrangörsrollen innan du skapar en tävling.");
+      return;
+    }
+
+    try {
+      setError("");
+      setMessage("");
+      setIsCreatingCompetition(true);
+
+      const competition = await createCompetition(competitionForm);
+
+      setCompetitions((previous) => [competition, ...previous]);
+      setCompetitionForm(initialCompetitionForm);
+      setMessage("Tävlingen är publicerad.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Kunde inte skapa tävlingen");
+    } finally {
+      setIsCreatingCompetition(false);
+    }
+  }
+
+  function handleRoleViewClick(roleView: ActiveRoleView) {
+    if (roleView === "organizer" && !canOrganize) {
+      void handleBecomeOrganizer();
+      return;
+    }
+
+    if (roleView === "timekeeper" && !canReportTimes) {
+      void handleBecomeTimekeeper();
+      return;
+    }
+
+    setActiveRoleView(roleView);
   }
 
   async function openTimingView(competition: Competition) {
@@ -359,150 +427,304 @@ export default function AccountDashboard({
     <main className="profile-shell">
       <section className="profile-page-heading">
         <div className="profile-role-tabs" aria-label="Roller">
-          <button type="button" className={`profile-role ${canJoin ? "is-active" : ""}`} disabled>
+          <button
+            type="button"
+            className={`profile-role ${activeRoleView === "runner" ? "is-active" : ""}`}
+            onClick={() => handleRoleViewClick("runner")}
+          >
             <span /> Löpare
           </button>
           <button
             type="button"
-            className={`profile-role ${canOrganize ? "is-active" : ""}`}
-            onClick={canOrganize ? undefined : () => void handleBecomeOrganizer()}
-            disabled={canOrganize || isUpdatingRole}
+            className={`profile-role ${activeRoleView === "organizer" ? "is-active" : ""}`}
+            onClick={() => handleRoleViewClick("organizer")}
+            disabled={isUpdatingRole}
           >
             <span /> Arrangör
           </button>
           <button
             type="button"
-            className={`profile-role ${canReportTimes ? "is-active" : ""}`}
-            onClick={canReportTimes ? undefined : () => void handleBecomeTimekeeper()}
-            disabled={canReportTimes || isUpdatingRole}
+            className={`profile-role ${activeRoleView === "timekeeper" ? "is-active" : ""}`}
+            onClick={() => handleRoleViewClick("timekeeper")}
+            disabled={isUpdatingRole}
           >
             <span /> Funktionär
           </button>
         </div>
 
-        <p className="profile-eyebrow">Min statistik, anmälningar och resultat</p>
-        <h1>Min löparprofil</h1>
+        <p className="profile-eyebrow">
+          {activeRoleView === "organizer"
+            ? "Skapa och administrera tävlingar"
+            : activeRoleView === "timekeeper"
+              ? "Rapportera tider för kommande tävlingar"
+              : "Min statistik, anmälningar och resultat"}
+        </p>
+        <h1>
+          {activeRoleView === "organizer"
+            ? "Arrangörsyta"
+            : activeRoleView === "timekeeper"
+              ? "Funktionärsyta"
+              : "Min löparprofil"}
+        </h1>
       </section>
 
       {error && <div className="profile-alert profile-alert--error">{error}</div>}
       {message && <div className="profile-alert profile-alert--success">{message}</div>}
 
-      <section className="profile-card profile-identity">
-        <div className="profile-avatar">{getInitials(session.user.firstName, session.user.lastName)}</div>
-        <div>
-          <h2>{displayName}</h2>
-          <p>
-            <User size={15} /> Löpare
-            {session.user.club && <> · {session.user.club}</>}
-            {session.user.organizerName && <> · {session.user.organizerName}</>}
-          </p>
-        </div>
-      </section>
-
-      <section className="profile-stats" aria-label="Din statistik">
-        <article className="profile-stat-card">
-          <span>Bästa resultat</span>
-          <strong>{bestRegistration ? `#${bestRegistration.lapTimes.length}` : "-"}</strong>
-          <p>{bestRegistration?.competition?.name ?? "Inget resultat ännu"}</p>
-        </article>
-        <article className="profile-stat-card">
-          <span>Totalt varv</span>
-          <strong>{totalLaps}</strong>
-          <p>Alla tävlingar</p>
-        </article>
-        <article className="profile-stat-card">
-          <span>Längsta sträcka</span>
-          <strong>{longestDistance} km</strong>
-          <p>{totalLaps} varv × 6.706 km</p>
-        </article>
-        <article className="profile-stat-card">
-          <span>Kommande</span>
-          <strong>{upcomingItems.length}</strong>
-          <p>Tävlingar och uppdrag</p>
-        </article>
-      </section>
-
-      <section className="profile-content-grid">
-        <section className="profile-panel">
-          <div className="profile-panel__header">
-            <h2>Kommande</h2>
-          </div>
-
-          {upcomingItems.length === 0 ? (
-            <p className="profile-empty">Du har inget kommande ännu.</p>
-          ) : (
-            <div className="profile-event-list">
-              {upcomingItems.map((item) => (
-                <button
-                  type="button"
-                  className="profile-event"
-                  key={item.id}
-                  onClick={() => handleUpcomingClick(item)}
-                  disabled={item.role !== "timekeeper"}
-                >
-                  <span className="profile-event__icon">
-                    {item.role === "timekeeper" ? <Timer size={20} /> : <Trophy size={20} />}
-                  </span>
-                  <span>
-                    <strong>{item.competition.name}</strong>
-                    <small>
-                      {formatDateTime(item.competition.startAt)} · {item.competition.place}
-                    </small>
-                  </span>
-                  <em>{item.role === "timekeeper" ? "Tidtagning" : "Anmäld"}</em>
-                  <span className="profile-event__arrow">{item.role === "timekeeper" ? ">" : ""}</span>
-                </button>
-              ))}
+      {activeRoleView === "organizer" && (
+        <section className="organizer-workspace">
+          <section className="profile-panel organizer-create">
+            <div className="profile-panel__header">
+              <div>
+                <p className="profile-panel__kicker">Arrangera</p>
+                <h2>Skapa tävling</h2>
+              </div>
             </div>
-          )}
+
+            <form className="organizer-form" onSubmit={handleCompetitionSubmit}>
+              <label>
+                Namn
+                <input
+                  type="text"
+                  value={competitionForm.name}
+                  onChange={(event) => updateCompetitionField("name", event.target.value)}
+                  placeholder="Backyard Ultra Umeå"
+                  required
+                />
+              </label>
+
+              <label>
+                Sport eller tävlingstyp
+                <input
+                  type="text"
+                  value={competitionForm.type}
+                  onChange={(event) => updateCompetitionField("type", event.target.value)}
+                  placeholder="Backyard Ultra, Trail, Ultra..."
+                  required
+                />
+              </label>
+
+              <div className="organizer-form__grid">
+                <label>
+                  Start
+                  <input
+                    type="datetime-local"
+                    value={competitionForm.startAt}
+                    onChange={(event) => updateCompetitionField("startAt", event.target.value)}
+                    required
+                  />
+                </label>
+
+                <label>
+                  Slut, valfritt
+                  <input
+                    type="datetime-local"
+                    value={competitionForm.endAt ?? ""}
+                    onChange={(event) => updateCompetitionField("endAt", event.target.value || null)}
+                  />
+                </label>
+              </div>
+
+              <label>
+                Plats
+                <input
+                  type="text"
+                  value={competitionForm.place}
+                  onChange={(event) => updateCompetitionField("place", event.target.value)}
+                  placeholder="Umeå"
+                  required
+                />
+              </label>
+
+              <button type="submit" disabled={isCreatingCompetition}>
+                {isCreatingCompetition ? "Publicerar..." : "Publicera tävling"}
+              </button>
+            </form>
+          </section>
+
+          <section className="profile-panel">
+            <div className="profile-panel__header">
+              <div>
+                <p className="profile-panel__kicker">Dina tävlingar</p>
+                <h2>Arrangemang</h2>
+              </div>
+              <span>{organizerCompetitions.length} st</span>
+            </div>
+
+            {organizerCompetitions.length === 0 ? (
+              <p className="profile-empty">Du har inte skapat någon tävling ännu.</p>
+            ) : (
+              <div className="profile-event-list">
+                {organizerCompetitions.map((competition) => (
+                  <article className="organizer-event" key={competition.id}>
+                    <span className="profile-event__icon">
+                      <Trophy size={20} />
+                    </span>
+                    <span>
+                      <strong>{competition.name}</strong>
+                      <small>{formatDateTime(competition.startAt)} · {competition.place}</small>
+                    </span>
+                    <em>{competition.type}</em>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
         </section>
+      )}
 
-        <section className="profile-panel">
+      {activeRoleView === "timekeeper" && (
+        <section className="profile-panel profile-available">
           <div className="profile-panel__header">
-            <h2>Resultathistorik</h2>
+            <div>
+              <p className="profile-panel__kicker">Funktionär</p>
+              <h2>Välj tävling för tidtagning</h2>
+            </div>
+            <Timer size={18} />
           </div>
+          <div className="profile-event-list">
+            {competitions.filter(isUpcoming).map((competition) => (
+              <button
+                type="button"
+                className="profile-event"
+                key={competition.id}
+                onClick={() => void openTimingView(competition)}
+              >
+                <span className="profile-event__icon">
+                  <Timer size={20} />
+                </span>
+                <span>
+                  <strong>{competition.name}</strong>
+                  <small>{formatDateTime(competition.startAt)} · {competition.place}</small>
+                </span>
+                <em>Tidtagning</em>
+                <span className="profile-event__arrow">&gt;</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
-          {resultHistory.length === 0 ? (
-            <p className="profile-empty">Inga rapporterade resultat ännu.</p>
-          ) : (
-            <div className="profile-result-list">
-              {resultHistory.map((registration) => (
-                <article className="profile-result" key={registration.id}>
-                  <span>#{registration.lapTimes.length}</span>
-                  <div>
-                    <strong>{registration.competition?.name ?? "Tävling"}</strong>
-                    <small>
-                      {registration.competition
-                        ? `${formatDateTime(registration.competition.startAt)} · ${registration.competition.place}`
-                        : "Datum saknas"}
-                    </small>
-                  </div>
-                  <b>{registration.lapTimes.length} varv</b>
+      {activeRoleView === "runner" && (
+        <>
+          <section className="profile-card profile-identity">
+            <div className="profile-avatar">{getInitials(session.user.firstName, session.user.lastName)}</div>
+            <div>
+              <h2>{displayName}</h2>
+              <p>
+                <User size={15} /> Löpare
+                {session.user.club && <> · {session.user.club}</>}
+                {session.user.organizerName && <> · {session.user.organizerName}</>}
+              </p>
+            </div>
+          </section>
+
+          <section className="profile-stats" aria-label="Din statistik">
+            <article className="profile-stat-card">
+              <span>Bästa resultat</span>
+              <strong>{bestRegistration ? `#${bestRegistration.lapTimes.length}` : "-"}</strong>
+              <p>{bestRegistration?.competition?.name ?? "Inget resultat ännu"}</p>
+            </article>
+            <article className="profile-stat-card">
+              <span>Totalt varv</span>
+              <strong>{totalLaps}</strong>
+              <p>Alla tävlingar</p>
+            </article>
+            <article className="profile-stat-card">
+              <span>Längsta sträcka</span>
+              <strong>{longestDistance} km</strong>
+              <p>{totalLaps} varv × 6.706 km</p>
+            </article>
+            <article className="profile-stat-card">
+              <span>Kommande</span>
+              <strong>{upcomingItems.length}</strong>
+              <p>Tävlingar och uppdrag</p>
+            </article>
+          </section>
+
+          <section className="profile-content-grid">
+            <section className="profile-panel">
+              <div className="profile-panel__header">
+                <h2>Kommande</h2>
+              </div>
+
+              {upcomingItems.length === 0 ? (
+                <p className="profile-empty">Du har inget kommande ännu.</p>
+              ) : (
+                <div className="profile-event-list">
+                  {upcomingItems.map((item) => (
+                    <button
+                      type="button"
+                      className="profile-event"
+                      key={item.id}
+                      onClick={() => handleUpcomingClick(item)}
+                      disabled={item.role !== "timekeeper"}
+                    >
+                      <span className="profile-event__icon">
+                        {item.role === "timekeeper" ? <Timer size={20} /> : <Trophy size={20} />}
+                      </span>
+                      <span>
+                        <strong>{item.competition.name}</strong>
+                        <small>
+                          {formatDateTime(item.competition.startAt)} · {item.competition.place}
+                        </small>
+                      </span>
+                      <em>{item.role === "timekeeper" ? "Tidtagning" : "Anmäld"}</em>
+                      <span className="profile-event__arrow">{item.role === "timekeeper" ? ">" : ""}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="profile-panel">
+              <div className="profile-panel__header">
+                <h2>Resultathistorik</h2>
+              </div>
+
+              {resultHistory.length === 0 ? (
+                <p className="profile-empty">Inga rapporterade resultat ännu.</p>
+              ) : (
+                <div className="profile-result-list">
+                  {resultHistory.map((registration) => (
+                    <article className="profile-result" key={registration.id}>
+                      <span>#{registration.lapTimes.length}</span>
+                      <div>
+                        <strong>{registration.competition?.name ?? "Tävling"}</strong>
+                        <small>
+                          {registration.competition
+                            ? `${formatDateTime(registration.competition.startAt)} · ${registration.competition.place}`
+                            : "Datum saknas"}
+                        </small>
+                      </div>
+                      <b>{registration.lapTimes.length} varv</b>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+          </section>
+
+          <section className="profile-panel profile-available">
+            <div className="profile-panel__header">
+              <div>
+                <p className="profile-panel__kicker">På kommande</p>
+                <h2>Alla tävlingar</h2>
+              </div>
+              <MapPin size={18} />
+            </div>
+            <div className="profile-available-grid">
+              {competitions.filter(isUpcoming).slice(0, 4).map((competition) => (
+                <article className="profile-mini-card" key={competition.id}>
+                  <span>{competition.type}</span>
+                  <strong>{competition.name}</strong>
+                  <p>{formatDateTime(competition.startAt)} · {competition.place}</p>
                 </article>
               ))}
             </div>
-          )}
-        </section>
-      </section>
-
-      <section className="profile-panel profile-available">
-        <div className="profile-panel__header">
-          <div>
-            <p className="profile-panel__kicker">På kommande</p>
-            <h2>Alla tävlingar</h2>
-          </div>
-          <MapPin size={18} />
-        </div>
-        <div className="profile-available-grid">
-          {competitions.filter(isUpcoming).slice(0, 4).map((competition) => (
-            <article className="profile-mini-card" key={competition.id}>
-              <span>{competition.type}</span>
-              <strong>{competition.name}</strong>
-              <p>{formatDateTime(competition.startAt)} · {competition.place}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+          </section>
+        </>
+      )}
 
       <section className="profile-panel profile-privacy">
         <div className="profile-panel__header">

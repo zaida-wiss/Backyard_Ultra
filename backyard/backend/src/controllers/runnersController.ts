@@ -4,6 +4,7 @@ import { Types } from "mongoose";
 import HttpError from "../errors/httpError.js";
 import { CompetitionModel, toCompetitionResponse } from "../models/competition.model.js";
 import { RunnerModel, type RunnerDocument, toRunnerResponse } from "../models/runner.model.js";
+import { TimekeeperAssignmentModel } from "../models/timekeeperAssignment.model.js";
 import {
   hasRole,
   toOrganizerAccount,
@@ -329,11 +330,22 @@ const updateRunnerLapTimes = async (req: Request, res: Response, next: NextFunct
     const competition = await getCompetitionOrThrow(runner.competitionId.toString());
     const { lapTimes } = req.validatedBody as RunnerLapTimesBody;
     const roles = req.authUser?.roles ?? [];
-    const canReportAnyCompetition = roles.includes("timekeeper") || roles.includes("admin");
+    const isAdmin = roles.includes("admin");
+    const isOrganizer = roles.includes("organizer");
+    const isAssignedTimekeeper = roles.includes("timekeeper")
+      ? await TimekeeperAssignmentModel.exists({
+          competitionId: competition._id,
+          userId: req.authUser?.id,
+        })
+      : null;
 
-    if (!canReportAnyCompetition) {
+    if (!isAdmin && !isAssignedTimekeeper) {
       if (!req.organizer) {
         throw new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som tidtagare eller arrangör");
+      }
+
+      if (!isOrganizer) {
+        throw new HttpError(403, "FORBIDDEN", "Du saknar behörighet för tidtagning på den här tävlingen");
       }
 
       requireCompetitionOwner(competition, req.organizer.id, req.organizer.role);

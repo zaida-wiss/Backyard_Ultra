@@ -20,6 +20,7 @@
 .profile-card,
 .profile-stats,
 .profile-content-grid,
+.organizer-workspace,
 .profile-available,
 .profile-privacy,
 .profile-alert,
@@ -192,6 +193,14 @@
   margin-bottom: 22px;
 }
 
+.organizer-workspace {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
+  gap: 22px;
+  align-items: start;
+  margin-bottom: 22px;
+}
+
 .profile-panel {
   padding: 0;
   overflow: hidden;
@@ -235,6 +244,39 @@
   color: inherit;
   padding: 0;
   text-align: left;
+}
+
+.organizer-event {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  min-height: 86px;
+  border-bottom: 1px solid rgba(101, 224, 137, 0.08);
+}
+
+.organizer-event strong {
+  display: block;
+}
+
+.organizer-event small {
+  display: block;
+  margin-top: 4px;
+  color: rgba(180, 204, 187, 0.46);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+}
+
+.organizer-event em {
+  border: 1px solid rgba(101, 224, 137, 0.22);
+  border-radius: 999px;
+  color: #65e089;
+  padding: 6px 14px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  font-style: normal;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .profile-event:not(:disabled) {
@@ -315,6 +357,65 @@
 
 .profile-empty {
   padding: 28px 32px 34px;
+}
+
+.organizer-form {
+  display: grid;
+  gap: 14px;
+  padding: 24px 32px 30px;
+}
+
+.organizer-form label {
+  display: grid;
+  gap: 8px;
+  color: rgba(180, 204, 187, 0.56);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.organizer-form input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid rgba(101, 224, 137, 0.18);
+  border-radius: 12px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.03);
+  color: #f0f5f1;
+  padding: 0 12px;
+  font: 500 0.95rem "Outfit", system-ui, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.organizer-form input:focus {
+  border-color: rgba(101, 224, 137, 0.55);
+  box-shadow: 0 0 0 3px rgba(101, 224, 137, 0.08);
+}
+
+.organizer-form button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: #65e089;
+  color: #020904;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.organizer-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.organizer-form__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 .profile-available {
@@ -424,6 +525,7 @@
 @media (max-width: 980px) {
   .profile-stats,
   .profile-content-grid,
+  .organizer-workspace,
   .profile-available-grid {
     grid-template-columns: 1fr;
   }
@@ -445,6 +547,11 @@
 
   .profile-event {
     grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .organizer-form__grid,
+  .organizer-event {
+    grid-template-columns: 1fr;
   }
 
   .profile-event em,

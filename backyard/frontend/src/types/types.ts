@@ -82,6 +82,18 @@ export type RunnerRegistrationWithCompetition = RunnerRegistration & {
   competition?: Competition;
 };
 
+export type TimekeeperAssignment = {
+  id: string;
+  competitionId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TimekeeperAssignmentWithCompetition = TimekeeperAssignment & {
+  competition: Competition | null;
+};
+
 export type CreateCompetitionData = {
   name: string;
   type: string;

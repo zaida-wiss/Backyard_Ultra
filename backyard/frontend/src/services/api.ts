@@ -4,6 +4,7 @@ import type {
   CreateCompetitionData,
   RunnerRegistration,
   RunnerRegistrationWithCompetition,
+  TimekeeperAssignmentWithCompetition,
 } from "../types/types";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/v1";
@@ -169,6 +170,27 @@ export async function becomeTimekeeper(): Promise<void> {
   });
 
   await parseResponse<unknown>(response);
+}
+
+export async function listMyTimekeeperAssignments(): Promise<TimekeeperAssignmentWithCompetition[]> {
+  const response = await apiFetch("/timekeepers/me/assignments");
+
+  return parseResponse<TimekeeperAssignmentWithCompetition[]>(response);
+}
+
+export async function assignTimekeeperToCompetition(
+  competitionId: string,
+  email: string,
+): Promise<TimekeeperAssignmentWithCompetition> {
+  const response = await apiFetch(`/timekeepers/competitions/${competitionId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+
+  return parseResponse<TimekeeperAssignmentWithCompetition>(response);
 }
 
 export async function reportRunnerLapTimes(
