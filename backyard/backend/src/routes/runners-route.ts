@@ -4,6 +4,7 @@ import {
   deleteRunner,
   getRunnerById,
   getCurrentRunner,
+  listRunnerResultChangeLogs,
   listRunners,
   listCurrentRunnerRegistrations,
   loginRunner,
@@ -47,6 +48,16 @@ router.get(
 
 // GET /api/v1/runners/:id
 router.get("/:id", validateIdParam, getRunnerById);
+
+// GET /api/v1/runners/:id/result-logs
+// Arrangör/admin kan granska vem som ändrat resultat för en löpare.
+router.get(
+  "/:id/result-logs",
+  requireAuth,
+  requireRole("organizer", "admin"),
+  validateIdParam,
+  listRunnerResultChangeLogs,
+);
 
 // PATCH /api/v1/runners/:id/lap-times
 // Tidtagare får rapportera tider, men får inte lägga till eller ta bort deltagare.

@@ -63,9 +63,10 @@ const listCompetitions = async (req: Request, res: Response, next: NextFunction)
     }
 
     const { page, limit } = parsePagination(req.query);
-    const competitions = await CompetitionModel.find(
-      buildCompetitionQuery(req.competitionFilters),
-    )
+    const competitions = await CompetitionModel.find({
+      ...buildCompetitionQuery(req.competitionFilters),
+      isPublic: true,
+    })
       .sort({ startAt: 1 })
       .skip((page - 1) * limit)
       .limit(limit);
@@ -108,9 +109,16 @@ const createCompetitionForOrganizer = async (
       organizerId: req.organizer.id,
       name: validatedBody.name,
       type: validatedBody.type,
+      templateKey: validatedBody.templateKey,
+      status: validatedBody.status,
       place: validatedBody.place,
       startAt: toDatabaseDate(validatedBody.startAt),
       endAt: toOptionalDatabaseDate(validatedBody.endAt),
+      registrationDeadline: toOptionalDatabaseDate(validatedBody.registrationDeadline),
+      isPublic: validatedBody.isPublic,
+      registrationMode: validatedBody.registrationMode,
+      allowTeamRegistration: validatedBody.allowTeamRegistration,
+      allowRepresentingOrganization: validatedBody.allowRepresentingOrganization,
     });
 
     return res.status(201).json(toCompetitionResponse(competition));
@@ -132,9 +140,16 @@ const updateCompetition = async (req: Request, res: Response, next: NextFunction
 
     competition.name = validatedBody.name;
     competition.type = validatedBody.type;
+    competition.templateKey = validatedBody.templateKey;
+    competition.status = validatedBody.status;
     competition.place = validatedBody.place;
     competition.startAt = toDatabaseDate(validatedBody.startAt);
     competition.endAt = toOptionalDatabaseDate(validatedBody.endAt);
+    competition.registrationDeadline = toOptionalDatabaseDate(validatedBody.registrationDeadline);
+    competition.isPublic = validatedBody.isPublic;
+    competition.registrationMode = validatedBody.registrationMode;
+    competition.allowTeamRegistration = validatedBody.allowTeamRegistration;
+    competition.allowRepresentingOrganization = validatedBody.allowRepresentingOrganization;
 
     await competition.save();
 

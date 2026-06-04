@@ -46,19 +46,41 @@ export type Competition = {
   organizerId: string;
   name: string;
   type: string;
+  templateKey: "backyard-ultra";
+  status: CompetitionStatus;
   place: string;
   startAt: string;
   endAt: string | null;
+  registrationDeadline: string | null;
+  isPublic: boolean;
+  registrationMode: RegistrationMode;
+  allowTeamRegistration: boolean;
+  allowRepresentingOrganization: boolean;
   createdAt: string;
   updatedAt: string;
 };
 
-export type RunnerStatus = "registered";
+export type CompetitionStatus = "draft" | "open" | "closed" | "in_progress" | "finished";
+
+export type RegistrationMode = "self_service" | "organizer_only" | "both";
+
+export type RunnerStatus = "registered" | "active" | "dnf" | "finished";
+
+export type RegistrationType = "individual" | "team";
+
+export type TeamMember = {
+  firstName: string;
+  lastName: string;
+};
 
 export type Runner = {
   id: string;
   competitionId: string;
   runnerAccountId: string | null;
+  runnerNumber: number | null;
+  registrationType: RegistrationType;
+  teamName: string | null;
+  teamMembers: TeamMember[];
   firstName: string;
   lastName: string;
   email: string | null;
@@ -88,14 +110,25 @@ export type CreateCompetitionInput = {
   organizerId: string;
   name: string;
   type: string;
+  templateKey: "backyard-ultra";
+  status: CompetitionStatus;
   place: string;
   startAt: string;
   endAt: string | null;
+  registrationDeadline: string | null;
+  isPublic: boolean;
+  registrationMode: RegistrationMode;
+  allowTeamRegistration: boolean;
+  allowRepresentingOrganization: boolean;
 };
 
 export type CreateRunnerInput = {
   competitionId: string;
   runnerAccountId?: string | null;
+  runnerNumber?: number | null;
+  registrationType?: RegistrationType;
+  teamName?: string | null;
+  teamMembers?: TeamMember[];
   firstName: string;
   lastName: string;
   email?: string | null;

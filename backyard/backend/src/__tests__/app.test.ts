@@ -7,7 +7,9 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 
 import app from "../app.js";
 import { CompetitionModel } from "../models/competition.model.js";
+import { ResultChangeLogModel } from "../models/resultChangeLog.model.js";
 import { RunnerModel } from "../models/runner.model.js";
+import { TimekeeperAssignmentModel } from "../models/timekeeperAssignment.model.js";
 import { UserModel } from "../models/user.model.js";
 import { hashPassword } from "../utils/jwt.js";
 
@@ -94,6 +96,8 @@ describe("competition backend flow", () => {
 
   after(async () => {
     await closeServer();
+    await ResultChangeLogModel.deleteMany({});
+    await TimekeeperAssignmentModel.deleteMany({});
     await RunnerModel.deleteMany({});
     await CompetitionModel.deleteMany({});
     await UserModel.deleteMany({});
@@ -345,12 +349,17 @@ describe("competition backend flow", () => {
   });
 
   it("lets a timekeeper report lap times but not add or delete runners", async () => {
-    await UserModel.create({
+    const timekeeper = await UserModel.create({
       firstName: "Tim",
       lastName: "Tidtagare",
       email: "tidtagare@example.com",
       roles: ["user", "runner", "timekeeper"],
       passwordHash: await hashPassword("password123"),
+    });
+
+    await TimekeeperAssignmentModel.create({
+      competitionId: seededCompetitionId,
+      userId: timekeeper._id,
     });
 
     const runner = await RunnerModel.create({
@@ -395,6 +404,10 @@ describe("competition backend flow", () => {
     assert.equal(lapTimesResponse.status, 200);
     const updatedRunner = await lapTimesResponse.json();
     assert.deepEqual(updatedRunner.lapTimes, [3598, 3602]);
+
+    const resultLogs = await ResultChangeLogModel.find({ runnerId: runner._id });
+    assert.equal(resultLogs.length, 1);
+    assert.equal(resultLogs[0].actorUserId.toString(), timekeeper.id);
 
     const addRunnerResponse = await request(`/api/v1/competitions/${seededCompetitionId}/runners`, {
       method: "POST",

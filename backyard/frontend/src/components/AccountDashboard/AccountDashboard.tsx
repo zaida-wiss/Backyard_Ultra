@@ -33,8 +33,10 @@ type UpcomingItem = {
 };
 
 type ActiveRoleView = "runner" | "organizer" | "timekeeper";
+type TimingSort = "runnerNumber" | "averageLapTime";
 
 const BACKYARD_LAP_KM = 6.706;
+const BACKYARD_LAP_SECONDS = 60 * 60;
 
 const initialCompetitionForm: CreateCompetitionData = {
   name: "",
@@ -64,6 +66,56 @@ function getInitials(firstName: string, lastName: string) {
   return `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase();
 }
 
+function calculateAverageLapTime(lapTimes: number[]) {
+  if (lapTimes.length === 0) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return lapTimes.reduce((sum, lapTime) => sum + lapTime, 0) / lapTimes.length;
+}
+
+function formatSeconds(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = Math.round(totalSeconds % 60);
+
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function getCurrentLapElapsedSeconds(competition: Competition) {
+  const elapsedSeconds = Math.floor(
+    (Date.now() - new Date(competition.startAt).getTime()) / 1000,
+  );
+
+  if (elapsedSeconds < 0) {
+    throw new Error("Tävlingen har inte startat ännu.");
+  }
+
+  return Math.min(BACKYARD_LAP_SECONDS - 1, elapsedSeconds % BACKYARD_LAP_SECONDS);
+}
+
+function getCurrentRaceLapNumber(competition: Competition) {
+  const elapsedSeconds = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(competition.startAt).getTime()) / 1000),
+  );
+
+  return Math.floor(elapsedSeconds / BACKYARD_LAP_SECONDS) + 1;
+}
+
+function getRunnerInfo(runner: RunnerRegistration) {
+  const parts = [
+    runner.club ? `Springer för: ${runner.club}` : null,
+    runner.teamName ? `Lag: ${runner.teamName}` : null,
+    runner.teamMembers.length > 0
+      ? `Lagmedlemmar: ${runner.teamMembers
+        .map((member) => `${member.firstName} ${member.lastName}`)
+        .join(", ")}`
+      : null,
+  ].filter(Boolean);
+
+  return parts.join(" · ") || "Ingen extra deltagarinformation";
+}
+
 export default function AccountDashboard({
   session,
   onAuthUpdate,
@@ -75,6 +127,7 @@ export default function AccountDashboard({
   const [activeTimingCompetition, setActiveTimingCompetition] = useState<Competition | null>(null);
   const [timingRunners, setTimingRunners] = useState<RunnerRegistration[]>([]);
   const [lapTimeDrafts, setLapTimeDrafts] = useState<Record<string, string>>({});
+  const [timingSort, setTimingSort] = useState<TimingSort>("runnerNumber");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isUpdatingRole, setIsUpdatingRole] = useState(false);
@@ -139,6 +192,26 @@ export default function AccountDashboard({
     .filter((registration) => registration.lapTimes.length > 0)
     .sort((left, right) => right.lapTimes.length - left.lapTimes.length)[0];
   const resultHistory = registrations.filter((registration) => registration.lapTimes.length > 0);
+  const sortedTimingRunners = useMemo(() => {
+    return [...timingRunners].sort((left, right) => {
+      if (timingSort === "averageLapTime") {
+        const averageDifference = calculateAverageLapTime(left.lapTimes) - calculateAverageLapTime(right.lapTimes);
+
+        if (averageDifference !== 0) {
+          return averageDifference;
+        }
+      }
+
+      const runnerNumberDifference = (left.runnerNumber ?? Number.MAX_SAFE_INTEGER)
+        - (right.runnerNumber ?? Number.MAX_SAFE_INTEGER);
+
+      if (runnerNumberDifference !== 0) {
+        return runnerNumberDifference;
+      }
+
+      return `${left.lastName} ${left.firstName}`.localeCompare(`${right.lastName} ${right.firstName}`, "sv");
+    });
+  }, [timingRunners, timingSort]);
 
   async function handleBecomeOrganizer() {
     try {
@@ -340,7 +413,10 @@ export default function AccountDashboard({
       setIsReportingRunnerId(runner.id);
 
       const lapTimes = parseLapTimes(lapTimeDrafts[runner.id] ?? "");
-      const updatedRunner = await reportRunnerLapTimes(runner.id, lapTimes);
+      const updatedRunner = await reportRunnerLapTimes(runner.id, lapTimes, {
+        isManualCorrection: true,
+        changeReason: "Manuell korrigering från funktionärsvy",
+      });
 
       setTimingRunners((previous) => previous.map((currentRunner) => (
         currentRunner.id === updatedRunner.id ? updatedRunner : currentRunner
@@ -357,7 +433,62 @@ export default function AccountDashboard({
     }
   }
 
+  async function handleFinishClick(runner: RunnerRegistration) {
+    if (!activeTimingCompetition) {
+      return;
+    }
+
+    try {
+      setError("");
+      setMessage("");
+      setIsReportingRunnerId(runner.id);
+
+      const finishSeconds = getCurrentLapElapsedSeconds(activeTimingCompetition);
+      const updatedRunner = await reportRunnerLapTimes(
+        runner.id,
+        [...runner.lapTimes, finishSeconds],
+        { status: "active" },
+      );
+
+      setTimingRunners((previous) => previous.map((currentRunner) => (
+        currentRunner.id === updatedRunner.id ? updatedRunner : currentRunner
+      )));
+      setLapTimeDrafts((previous) => ({
+        ...previous,
+        [updatedRunner.id]: updatedRunner.lapTimes.join(", "),
+      }));
+      setMessage(`Målgång registrerad för ${runner.firstName} ${runner.lastName}: ${formatSeconds(finishSeconds)}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Kunde inte registrera målgång");
+    } finally {
+      setIsReportingRunnerId(null);
+    }
+  }
+
+  async function handleDnfClick(runner: RunnerRegistration) {
+    try {
+      setError("");
+      setMessage("");
+      setIsReportingRunnerId(runner.id);
+
+      const updatedRunner = await reportRunnerLapTimes(runner.id, runner.lapTimes, {
+        status: "dnf",
+      });
+
+      setTimingRunners((previous) => previous.map((currentRunner) => (
+        currentRunner.id === updatedRunner.id ? updatedRunner : currentRunner
+      )));
+      setMessage(`DNF registrerad för ${runner.firstName} ${runner.lastName}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Kunde inte registrera DNF");
+    } finally {
+      setIsReportingRunnerId(null);
+    }
+  }
+
   if (activeTimingCompetition) {
+    const currentRaceLapNumber = getCurrentRaceLapNumber(activeTimingCompetition);
+
     return (
       <main className="profile-shell">
         <section className="profile-page-heading">
@@ -377,13 +508,25 @@ export default function AccountDashboard({
         {message && <div className="profile-alert profile-alert--success">{message}</div>}
 
         <section className="profile-panel timing-panel">
-          <div className="profile-panel__header">
-            <div>
-              <p className="profile-panel__kicker">Funktionär</p>
-              <h2>Rapportera varvtider</h2>
+            <div className="profile-panel__header">
+              <div>
+                <p className="profile-panel__kicker">Funktionär</p>
+                <h2>Rapportera varvtider</h2>
+              </div>
+              <div className="timing-toolbar">
+                <label>
+                  Sortera
+                  <select
+                    value={timingSort}
+                    onChange={(event) => setTimingSort(event.target.value as TimingSort)}
+                  >
+                    <option value="runnerNumber">Löparnummer</option>
+                    <option value="averageLapTime">Snittid</option>
+                  </select>
+                </label>
+                <span>{timingRunners.length} deltagare</span>
+              </div>
             </div>
-            <span>{timingRunners.length} deltagare</span>
-          </div>
 
           {isLoadingTimingRunners ? (
             <p className="profile-empty">Hämtar deltagare...</p>
@@ -391,31 +534,66 @@ export default function AccountDashboard({
             <p className="profile-empty">Inga deltagare finns att tidrapportera ännu.</p>
           ) : (
             <div className="timing-runner-list">
-              {timingRunners.map((runner) => (
-                <form
-                  className="timing-runner"
-                  key={runner.id}
-                  onSubmit={(event) => void handleLapTimesSubmit(event, runner)}
-                >
-                  <div>
-                    <strong>{runner.firstName} {runner.lastName}</strong>
-                    <span>{runner.club ?? "Ingen klubb"}</span>
-                  </div>
-                  <input
-                    type="text"
-                    value={lapTimeDrafts[runner.id] ?? ""}
-                    onChange={(event) => setLapTimeDrafts((previous) => ({
-                      ...previous,
-                      [runner.id]: event.target.value,
-                    }))}
-                    placeholder="3598, 3602, 3610"
-                    aria-label={`Varvtider för ${runner.firstName} ${runner.lastName}`}
-                  />
-                  <button type="submit" disabled={isReportingRunnerId === runner.id}>
-                    {isReportingRunnerId === runner.id ? "Sparar..." : "Spara tider"}
-                  </button>
-                </form>
-              ))}
+              {sortedTimingRunners.map((runner) => {
+                const averageLapTime = calculateAverageLapTime(runner.lapTimes);
+                const runnerInfo = getRunnerInfo(runner);
+                const isReporting = isReportingRunnerId === runner.id;
+                const isDnf = runner.status === "dnf";
+                const hasMissedPreviousLap = runner.lapTimes.length < currentRaceLapNumber - 1;
+
+                return (
+                  <form
+                    className="timing-runner"
+                    key={runner.id}
+                    onSubmit={(event) => void handleLapTimesSubmit(event, runner)}
+                  >
+                    <div>
+                      <strong title={runnerInfo}>
+                        {runner.runnerNumber ? `${runner.runnerNumber}. ` : ""}
+                        {runner.firstName} {runner.lastName}
+                      </strong>
+                      <span title={runnerInfo}>{runnerInfo}</span>
+                      <small>
+                        Snitt: {Number.isFinite(averageLapTime) ? formatSeconds(averageLapTime) : "-"}
+                        {isDnf ? " · DNF" : ""}
+                      </small>
+                    </div>
+                    <input
+                      type="text"
+                      value={lapTimeDrafts[runner.id] ?? ""}
+                      onChange={(event) => setLapTimeDrafts((previous) => ({
+                        ...previous,
+                        [runner.id]: event.target.value,
+                      }))}
+                      placeholder="52, 54, 51"
+                      aria-label={`Varvtider för ${runner.firstName} ${runner.lastName}`}
+                    />
+                    <div className="timing-runner__actions">
+                      {hasMissedPreviousLap || isDnf ? (
+                        <button
+                          type="button"
+                          className="is-danger"
+                          onClick={() => void handleDnfClick(runner)}
+                          disabled={isReporting || isDnf}
+                        >
+                          DNF
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => void handleFinishClick(runner)}
+                          disabled={isReporting}
+                        >
+                          Mål
+                        </button>
+                      )}
+                      <button type="submit" disabled={isReporting}>
+                        {isReporting ? "Sparar..." : "Korrigera"}
+                      </button>
+                    </div>
+                  </form>
+                );
+              })}
             </div>
           )}
         </section>

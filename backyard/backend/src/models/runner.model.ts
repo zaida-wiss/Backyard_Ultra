@@ -17,6 +17,22 @@ const runnerSchema = new Schema(
       ref: "User",
       default: null,
     },
+    runnerNumber: { type: Number, default: null },
+    registrationType: {
+      type: String,
+      enum: ["individual", "team"],
+      default: "individual",
+    },
+    teamName: { type: String, default: null, trim: true },
+    teamMembers: {
+      type: [
+        {
+          firstName: { type: String, required: true, trim: true },
+          lastName: { type: String, required: true, trim: true },
+        },
+      ],
+      default: [],
+    },
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
     email: { type: String, default: null, lowercase: true, trim: true },
@@ -27,7 +43,7 @@ const runnerSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["registered"],
+      enum: ["registered", "active", "dnf", "finished"],
       default: "registered",
     },
     deletedAt: { type: Date, default: null },
@@ -67,6 +83,13 @@ export const toRunnerResponse = (runner: RunnerDocument) => {
     id: runner.id,
     competitionId: runner.competitionId.toString(),
     runnerAccountId: runner.runnerAccountId?.toString() ?? null,
+    runnerNumber: runner.runnerNumber ?? null,
+    registrationType: runner.registrationType,
+    teamName: runner.teamName ?? null,
+    teamMembers: runner.teamMembers.map((member) => ({
+      firstName: member.firstName,
+      lastName: member.lastName,
+    })),
     firstName: runner.firstName,
     lastName: runner.lastName,
     email: runner.email ?? null,

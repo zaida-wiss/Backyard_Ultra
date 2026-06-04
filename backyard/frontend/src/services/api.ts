@@ -4,6 +4,7 @@ import type {
   CreateCompetitionData,
   RunnerRegistration,
   RunnerRegistrationWithCompetition,
+  RunnerStatus,
   TimekeeperAssignmentWithCompetition,
 } from "../types/types";
 
@@ -13,6 +14,12 @@ type ApiErrorResponse = {
   error?: {
     message?: string;
   };
+};
+
+type ReportRunnerLapTimesOptions = {
+  status?: RunnerStatus;
+  isManualCorrection?: boolean;
+  changeReason?: string | null;
 };
 
 function getApiErrorMessage(body: unknown) {
@@ -196,13 +203,17 @@ export async function assignTimekeeperToCompetition(
 export async function reportRunnerLapTimes(
   runnerId: string,
   lapTimes: number[],
+  options: ReportRunnerLapTimesOptions = {},
 ): Promise<RunnerRegistration> {
   const response = await apiFetch(`/runners/${runnerId}/lap-times`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ lapTimes }),
+    body: JSON.stringify({
+      lapTimes,
+      ...options,
+    }),
   });
 
   return parseResponse<RunnerRegistration>(response);

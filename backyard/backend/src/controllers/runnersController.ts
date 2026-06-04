@@ -3,6 +3,11 @@ import { Types } from "mongoose";
 
 import HttpError from "../errors/httpError.js";
 import { CompetitionModel, toCompetitionResponse } from "../models/competition.model.js";
+import type { CompetitionDocument } from "../models/competition.model.js";
+import {
+  ResultChangeLogModel,
+  toResultChangeLogResponse,
+} from "../models/resultChangeLog.model.js";
 import { RunnerModel, type RunnerDocument, toRunnerResponse } from "../models/runner.model.js";
 import { TimekeeperAssignmentModel } from "../models/timekeeperAssignment.model.js";
 import {
@@ -52,6 +57,57 @@ const getRunnerOrThrow = async (id: string): Promise<RunnerDocument> => {
   return runner;
 };
 
+const isPastDeadline = (deadline: Date | null | undefined) => {
+  return Boolean(deadline && deadline.getTime() < Date.now());
+};
+
+const requireSelfRegistrationAllowed = (competition: CompetitionDocument) => {
+  if (competition.registrationMode === "organizer_only") {
+    throw new HttpError(
+      403,
+      "SELF_REGISTRATION_CLOSED",
+      "Deltagare kan inte anmäla sig själva till den här tävlingen",
+    );
+  }
+
+  if (competition.status !== "open") {
+    throw new HttpError(
+      403,
+      "REGISTRATION_CLOSED",
+      "Anmälan är inte öppen för den här tävlingen",
+    );
+  }
+
+  if (isPastDeadline(competition.registrationDeadline)) {
+    throw new HttpError(
+      403,
+      "REGISTRATION_DEADLINE_PASSED",
+      "Sista anmälningsdag har passerat",
+    );
+  }
+};
+
+const validateRegistrationSettings = (
+  competition: CompetitionDocument,
+  runner: ValidatedRunnerBody,
+) => {
+  if (runner.registrationType === "team" && !competition.allowTeamRegistration) {
+    throw new HttpError(
+      400,
+      "TEAM_REGISTRATION_NOT_ALLOWED",
+      "Tävlingen tillåter inte laganmälan",
+    );
+  }
+
+  if (runner.club && !competition.allowRepresentingOrganization) {
+    throw new HttpError(
+      400,
+      "REPRESENTING_ORGANIZATION_NOT_ALLOWED",
+      "Tävlingen tillåter inte klubb, förening, företag eller organisation",
+    );
+  }
+};
+
 const listRunners = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const query: Record<string, unknown> = { deletedAt: null };
@@ -70,7 +126,7 @@ const listRunners = async (req: Request, res: Response, next: NextFunction) => {
       query.status = status;
     }
 
-    const runners = await RunnerModel.find(query).sort({ createdAt: 1 });
+    const runners = await RunnerModel.find(query).sort({ runnerNumber: 1, createdAt: 1 });
 
     return res.json(runners.map(toRunnerResponse));
   } catch (error) {
@@ -88,7 +144,7 @@ const listCompetitionRunners = async (
     const runners = await RunnerModel.find({
       competitionId: competition._id,
       deletedAt: null,
-    }).sort({ createdAt: 1 });
+    }).sort({ runnerNumber: 1, createdAt: 1 });
 
     return res.json(runners.map(toRunnerResponse));
   } catch (error) {
@@ -196,9 +252,14 @@ const registerRunner = async (req: Request, res: Response, next: NextFunction) =
     const validatedBody = req.validatedBody as ValidatedRunnerBody;
 
     requireCompetitionOwner(competition, req.organizer.id, req.organizer.role);
+    validateRegistrationSettings(competition, validatedBody);
 
     const runner = await RunnerModel.create({
       competitionId: competition._id,
+      runnerNumber: validatedBody.runnerNumber ?? null,
+      registrationType: validatedBody.registrationType ?? "individual",
+      teamName: validatedBody.teamName ?? null,
+      teamMembers: validatedBody.teamMembers ?? [],
       firstName: validatedBody.firstName,
       lastName: validatedBody.lastName,
       email: validatedBody.email,
@@ -222,6 +283,8 @@ const registerCurrentRunnerForCompetition = async (
     }
 
     const competition = await getCompetitionOrThrow(getRouteParam(req.params.competitionId));
+    requireSelfRegistrationAllowed(competition);
+
     const existingRegistration = await RunnerModel.findOne({
       competitionId: competition._id,
       runnerAccountId: req.runnerAccount.id,
@@ -235,10 +298,11 @@ const registerCurrentRunnerForCompetition = async (
     const registration = await RunnerModel.create({
       competitionId: competition._id,
       runnerAccountId: req.runnerAccount.id,
+      registrationType: "individual",
       firstName: req.runnerAccount.firstName,
       lastName: req.runnerAccount.lastName,
       email: req.runnerAccount.email,
-      club: req.runnerAccount.club,
+      club: competition.allowRepresentingOrganization ? req.runnerAccount.club : null,
     });
 
     return res.status(201).json(toRunnerResponse(registration));
@@ -290,7 +354,12 @@ const updateRunner = async (req: Request, res: Response, next: NextFunction) => 
     const validatedBody = req.validatedBody as ValidatedRunnerBody;
 
     requireCompetitionOwner(competition, req.organizer.id, req.organizer.role);
+    validateRegistrationSettings(competition, validatedBody);
 
+    runner.runnerNumber = validatedBody.runnerNumber ?? null;
+    runner.registrationType = validatedBody.registrationType ?? "individual";
+    runner.teamName = validatedBody.teamName || null;
+    runner.set("teamMembers", validatedBody.teamMembers ?? []);
     runner.firstName = validatedBody.firstName;
     runner.lastName = validatedBody.lastName;
     runner.email = validatedBody.email || null;
@@ -326,9 +395,13 @@ const deleteRunner = async (req: Request, res: Response, next: NextFunction) => 
 
 const updateRunnerLapTimes = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!req.authUser) {
+      throw new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad");
+    }
+
     const runner = await getRunnerOrThrow(getRouteParam(req.params.id));
     const competition = await getCompetitionOrThrow(runner.competitionId.toString());
-    const { lapTimes } = req.validatedBody as RunnerLapTimesBody;
+    const { lapTimes, status, isManualCorrection, changeReason } = req.validatedBody as RunnerLapTimesBody;
     const roles = req.authUser?.roles ?? [];
     const isAdmin = roles.includes("admin");
     const isOrganizer = roles.includes("organizer");
@@ -351,10 +424,63 @@ const updateRunnerLapTimes = async (req: Request, res: Response, next: NextFunct
       requireCompetitionOwner(competition, req.organizer.id, req.organizer.role);
     }
 
+    const previousValue = {
+      lapTimes: runner.lapTimes,
+      status: runner.status,
+    };
+
     runner.lapTimes = lapTimes;
+    if (status) {
+      runner.status = status;
+    }
     await runner.save();
 
+    await ResultChangeLogModel.create({
+      competitionId: competition._id,
+      runnerId: runner._id,
+      actorUserId: req.authUser.id,
+      actorRoles: roles,
+      lapNumber: lapTimes.length || null,
+      changeType: isManualCorrection
+        ? "manual_correction"
+        : status === "dnf"
+          ? "dnf_registered"
+          : "lap_times_updated",
+      previousValue,
+      newValue: {
+        lapTimes: runner.lapTimes,
+        status: runner.status,
+      },
+      reason: changeReason,
+    });
+
     return res.json(toRunnerResponse(runner));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const listRunnerResultChangeLogs = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!req.organizer) {
+      throw new HttpError(401, "UNAUTHORIZED", "Du måste vara inloggad som arrangör");
+    }
+
+    const runner = await getRunnerOrThrow(getRouteParam(req.params.id));
+    const competition = await getCompetitionOrThrow(runner.competitionId.toString());
+
+    requireCompetitionOwner(competition, req.organizer.id, req.organizer.role);
+
+    const logs = await ResultChangeLogModel.find({
+      competitionId: competition._id,
+      runnerId: runner._id,
+    }).sort({ createdAt: -1 });
+
+    return res.json(logs.map(toResultChangeLogResponse));
   } catch (error) {
     return next(error);
   }
@@ -366,6 +492,7 @@ export {
   getRunnerById,
   listCompetitionRunners,
   listCurrentRunnerRegistrations,
+  listRunnerResultChangeLogs,
   listRunners,
   loginRunner,
   registerCurrentRunnerForCompetition,
